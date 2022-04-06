@@ -1,0 +1,24 @@
+int x = [1,2,3,4];
+int y = 3;
+int z = a;
+bool bo;
+bool b = False;
+
+input(b);
+
+if((x + y) > x) {
+  x = y + 2;
+} else {
+  y = x - 3;
+}
+
+if(x){
+  if(y){
+    print(y);
+    if(x and z){
+      input(x);
+    }
+  }
+}
+
+print(x + y);
