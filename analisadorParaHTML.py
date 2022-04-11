@@ -7,22 +7,28 @@ from lark import Discard
 grammar = '''
 linguagem: declaracoes instrucoes
 
-declaracoes: declaracao PV (declaracao PV)*
-declaracao: tipo VAR (ATRIB logic)?
+declaracoes: comentario? declaracao PV comentario? (declaracao PV comentario?)*
+declaracao: tipo VAR (ATRIB tipoatribuicao)?
 
-instrucoes: instrucao instrucao*
+tipoatribuicao: normal | estrutura
+normal: logic
+estrutura: VAR PER chave PDR
+
+instrucoes: instrucao comentario? (instrucao comentario?)*
 instrucao: READ PE conteudoread PD PV
 | PRINT PE conteudoprint PD PV
 | IF PE condicao PD CE instrucoes CD (ELSE CE instrucoes CD)?
 | FOR PE atribuicao PV condicao PV atribuicao PD CE instrucoes CD
 | atribuicao PV
 
-atribuicao: VAR (PER indice PDR)? ATRIB logic
+comentario: C_COMMENT
+
+atribuicao: VAR (PER chave PDR)? ATRIB logic
 
 condicao: logic
 
-conteudoread: VAR (PER indice PDR)?
-conteudoprint: logic | VAR PER indice PDR
+conteudoread: VAR (PER chave PDR)?
+conteudoprint: logic | VAR PER chave PDR
 
 logic: PE? logicnot AND logic PD? | PE? logicnot OR logic PD? | PE? logicnot PD?
 logicnot: PE? NOT logic PD? | PE? relac PD?
@@ -47,20 +53,30 @@ termo: PE? exp MUL termo PD?
 factor: PE? logic PD?
 | NUM
 | BOOLEANO
+| STRING
+| NUMDOUBLE
 | VAR
-| PER content? PDR
-| CE content? CD
+| PER conteudo? PDR
+| CE conteudoespecial? CD
+| PE conteudo? PD
 
-content: valor (VIR valor)*
+conteudo: valor (VIR valor)*
+conteudoespecial: conteudodicionario | conteudo
+conteudodicionario: entrada (VIR entrada)*
+entrada: STRING PP valor
 
-tipo: INT | BOOL
-indice: NUM | VAR
-valor: NUM | BOOLEANO
+tipo: INT | BOOL | STR | DOUBLE
+valor: NUM | BOOLEANO | NUMDOUBLE | STRING
+chave: NUM | STRING
 
 BOOLEANO: "True" | "False"
 NUM: ("0".."9")+
-INT: "int"i
-BOOL: "bool"i
+NUMDOUBLE: ("0".."9")+"."("0".."9")+
+STRING: ESCAPED_STRING
+INT: "int"
+STR: "string"
+BOOL: "bool"
+DOUBLE: "double"
 VIR: ","
 PE: "("
 PD: ")"
@@ -69,6 +85,7 @@ PDR: "]"
 CE: "{"
 CD: "}"
 PV: ";"
+PP: ":"
 ADD: "+"
 SUB: "-"
 DIV: "/"
@@ -92,6 +109,8 @@ FOR: "for"
 ELSE: "else"
 
 %import common.WS
+%import common.ESCAPED_STRING
+%import common.C_COMMENT
 %ignore WS
 '''
 
@@ -149,13 +168,37 @@ class LinguagemProgramacao(Interpreter):
     #Verificar se o valor existe, se é booleano, ou se é uma variável
     if valor == None:
       self.naoInicializadas.append(var)
-    elif isinstance(valor,str):
-      if valor in self.decls.keys():
-        self.decls[var] = self.decls[valor]
+    elif isinstance(valor,str) and valor[0] != '"':
+      if '-' in valor:
+        #O valor resulta de um acesso a uma estrutura
+        infoEstrutura = valor.split('-')
+        variavel = infoEstrutura[0]
+        chave = infoEstrutura[1]
+        if chave > "0" and chave < "9":
+          chave = int(chave)
+        if variavel not in self.decls.keys():
+          self.erros.append(('1: Variável não declarada',variavel))
+        else:
+          (tipoArmazenado,estrutura) = self.decls[variavel]
+          if tipo != tipoArmazenado:
+            self.erros.append(('3: Erro de tipos na declaração',variavel))
+          elif (isinstance(estrutura,dict) and chave in estrutura.keys()) or ((isinstance(estrutura,list) or isinstance(estrutura,tuple)) and chave < len(estrutura)):
+            self.decls[var] = (tipoArmazenado, estrutura[chave])
+          else:
+            self.erros.append(('2: Acesso a campo não existente',variavel))
+      elif valor in self.decls.keys():
+        (tipoArmazenado,_) = self.decls[valor]
+        #Só permite atribuir variáveis do mesmo tipo
+        if tipo == tipoArmazenado:
+          self.decls[var] = self.decls[valor]
+        else:
+          self.erros.append(('3: Erro de tipos na declaração',valor))
       else:
         self.erros.append(('1: Variável não declarada',valor))
     else:
-      #É um int ou array de ints, ou bool ou array de bools
+      if isinstance(valor, str):
+        #Tirar as apas para armazenar a string
+        valor = valor[1:-1]
       self.decls[var] = (tipo, valor)
     #Transformar a declaração num parágrafo em HTML
     if valor != None:
@@ -163,6 +206,18 @@ class LinguagemProgramacao(Interpreter):
     else:
       print(tipo + ' ' + var + ';')
     print('</p>')
+    
+  def tipoatribuicao(self,tree):
+    r = self.visit(tree.children[0])
+    return r
+  
+  def normal(self,tree):
+    return self.visit(tree.children[0])
+  
+  def estrutura(self,tree):
+    variavel = tree.children[0].value
+    chave = self.visit(tree.children[2])
+    return str(variavel) + "-" + str(chave)
 
   def instrucoes(self, tree):
     # print('Entrei nas instruções...')
@@ -219,6 +274,10 @@ class LinguagemProgramacao(Interpreter):
           return False
         elif child.value == "True":
           return True
+      elif isinstance(child, Token) and child.type == 'STRING':
+        return str(child.value)
+      elif isinstance(child, Token) and child.type == 'NUMDOUBLE':
+        return float(child.value)
       elif isinstance(child, Token) and child.type == 'VAR':
         return str(child.value)
       elif isinstance(child, Token) and child.type == 'PER' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'PDR':
@@ -227,12 +286,33 @@ class LinguagemProgramacao(Interpreter):
         lista = self.visit(tree.children[1])
         return lista
       elif isinstance(child, Token) and child.type == 'CE' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'CD':
-        return set()
+        return {}
       elif isinstance(child, Token) and child.type == 'CE' and isinstance(tree.children[1], Tree):
-        conjunto = self.visit(tree.children[1])
-        return set(conjunto)
+        estrutura = self.visit(tree.children[1])
+        if isinstance(estrutura, dict):
+          return estrutura
+        else:
+          return set(estrutura)
+      elif isinstance(child, Token) and child.type == 'PE' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'PD':
+        return tuple()
+      elif isinstance(child, Token) and child.type == 'PE' and isinstance(tree.children[1], Tree):
+        tuplo = self.visit(tree.children[1])
+        return tuple(tuplo)
+      
+  def conteudoespecial(self,tree):
+    r = self.visit(tree.children[0])
+    return r
+  
+  def conteudodicionario(self,tree):
+    estrutura = dict()
+    for child in tree.children:
+      if isinstance(child, Tree):
+        entrada = self.visit(child)
+        chave = entrada[0][1:-1]
+        estrutura[chave] = entrada[2]
+    return estrutura
 
-  def content(self, tree):
+  def conteudo(self, tree):
     # print('Entrei no conteúdo de uma estrutura...')
     res = list()
     for child in tree.children:
@@ -240,6 +320,13 @@ class LinguagemProgramacao(Interpreter):
         r = self.visit(child)
         res.append(r)
     return res
+
+  def chave(self,tree):
+    if tree.children[0].type == 'NUM':
+      return int(tree.children[0].value)
+    else:
+      r = (tree.children[0].value)[1:-1]
+      return r
 
   def valor(self, tree):
     # print('Entrei num valor...')
@@ -251,6 +338,8 @@ class LinguagemProgramacao(Interpreter):
         return False
       else:
         return True
+    elif isinstance(child,Token) and child.type == 'NUMDOUBLE':
+      return float(child.value)
     
 l = Lark(grammar, start='linguagem')
 
