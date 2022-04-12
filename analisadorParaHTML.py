@@ -14,12 +14,14 @@ tipoatribuicao: normal | estrutura
 normal: logic
 estrutura: VAR PER chave PDR
 
-instrucoes: instrucao comentario? (instrucao comentario?)*
-instrucao: READ PE conteudoread PD PV
-| PRINT PE conteudoprint PD PV
+instrucoes: instrucao PV comentario? (instrucao PV comentario?)*
+instrucao: READ PE conteudoread PD
+| PRINT PE conteudoprint PD
 | IF PE condicao PD CE instrucoes CD (ELSE CE instrucoes CD)?
 | FOR PE atribuicao PV condicao PV atribuicao PD CE instrucoes CD
-| atribuicao PV
+| WHILE PE condicao PD CE instrucoes CD
+| REPEAT PE NUM PD CE instrucoes CD
+| atribuicao
 
 comentario: C_COMMENT
 
@@ -55,7 +57,7 @@ factor: PE? logic PD?
 | BOOLEANO
 | STRING
 | NUMDOUBLE
-| VAR
+| VAR (PER chave PDR)?
 | PER conteudo? PDR
 | CE conteudoespecial? CD
 | PE conteudo? PD
@@ -67,7 +69,7 @@ entrada: STRING PP valor
 
 tipo: INT | BOOL | STR | DOUBLE
 valor: NUM | BOOLEANO | NUMDOUBLE | STRING
-chave: NUM | STRING
+chave: NUM | STRING | VAR
 
 BOOLEANO: "True" | "False"
 NUM: ("0".."9")+
@@ -105,14 +107,26 @@ PRINT: "print"
 ATRIB: "="
 VAR: ("a".."z" | "A".."Z" | "_")+
 IF: "if"
-FOR: "for"
 ELSE: "else"
+FOR: "for"
+WHILE: "while"
+REPEAT: "repeat"
 
 %import common.WS
 %import common.ESCAPED_STRING
 %import common.C_COMMENT
 %ignore WS
 '''
+
+def digito(s):
+  resultado = True
+  limite = len(s)
+  i = 0
+  while i < limite and resultado:
+    if s[i] > "9" or s[i] < "0":
+      resultado = False
+    i += 1
+  return resultado
 
 class LinguagemProgramacao(Interpreter):
 
@@ -154,39 +168,36 @@ class LinguagemProgramacao(Interpreter):
     tipo = None
     valor = None
     for child in tree.children:
-      if isinstance(child, Token) and child.type == 'VAR':
+      if isinstance(child, Token) and child.type == 'VAR': #Visita o variável declarada
         # print('Variável declarada: ', child.value)
         var = child.value
-      elif isinstance(child, Tree) and child.data == 'tipo':
+      elif isinstance(child, Tree) and child.data == 'tipo': #Visita o tipo da declaração
         tipo = self.visit(child)
         # print('Tipo: ', tipo)
-      elif isinstance(child, Token) and child.type == 'ATRIB':
-        #Se houver atribuição visita o valor que está a ser atribuido
+      elif isinstance(child, Token) and child.type == 'ATRIB': #Se houver atribuição visita o valor que está a ser declarado
         valor = self.visit(tree.children[3])
         # print('Valor atribuído: ', valor)
 
-    #Verificar se o valor existe, se é booleano, ou se é uma variável
-    if valor == None:
+    if valor == None: #Verificar se foi atribuído algum valor à variável
       self.naoInicializadas.append(var)
-    elif isinstance(valor,str) and valor[0] != '"':
-      if '-' in valor:
-        #O valor resulta de um acesso a uma estrutura
+    elif isinstance(valor,str) and valor[0] != '"': #Verificar se o valor é uma variável (string sem "")
+      if '-' in valor: #O valor resulta de um acesso a uma estrutura, a variável e a chave são separados por '-'
         infoEstrutura = valor.split('-')
         variavel = infoEstrutura[0]
         chave = infoEstrutura[1]
-        if chave > "0" and chave < "9":
+        if digito(chave): #Se a chave for um dígito é convertida para inteiro
           chave = int(chave)
-        if variavel not in self.decls.keys():
+        if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro
           self.erros.append(('1: Variável não declarada',variavel))
         else:
           (tipoArmazenado,estrutura) = self.decls[variavel]
           if tipo != tipoArmazenado:
             self.erros.append(('3: Erro de tipos na declaração',variavel))
-          elif (isinstance(estrutura,dict) and chave in estrutura.keys()) or ((isinstance(estrutura,list) or isinstance(estrutura,tuple)) and chave < len(estrutura)):
+          elif (isinstance(estrutura,dict) and chave in estrutura.keys()) or ((isinstance(estrutura,list) or isinstance(estrutura,tuple)) and chave < len(estrutura)): #Se a estrutura for uma das válidas e a chave for também válida a declaração torna-se válida
             self.decls[var] = (tipoArmazenado, estrutura[chave])
           else:
             self.erros.append(('2: Acesso a campo não existente',variavel))
-      elif valor in self.decls.keys():
+      elif valor in self.decls.keys(): #Verificar se a variável atómica já existe
         (tipoArmazenado,_) = self.decls[valor]
         #Só permite atribuir variáveis do mesmo tipo
         if tipo == tipoArmazenado:
@@ -196,7 +207,7 @@ class LinguagemProgramacao(Interpreter):
       else:
         self.erros.append(('1: Variável não declarada',valor))
     else:
-      if isinstance(valor, str):
+      if isinstance(valor, str): #Declaração de uma string
         #Tirar as apas para armazenar a string
         valor = valor[1:-1]
       self.decls[var] = (tipo, valor)
@@ -343,7 +354,7 @@ class LinguagemProgramacao(Interpreter):
     
 l = Lark(grammar, start='linguagem')
 
-f = open('inputCode.txt', 'r')
+f = open('codigoFonte.txt', 'r')
 input = f.read()
 
 tree = l.parse(input)
