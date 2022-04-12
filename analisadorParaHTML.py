@@ -14,14 +14,14 @@ tipoatribuicao: normal | estrutura
 normal: logic
 estrutura: VAR PER chave PDR
 
-instrucoes: instrucao PV comentario? (instrucao PV comentario?)*
-instrucao: READ PE conteudoread PD
-| PRINT PE conteudoprint PD
+instrucoes: instrucao comentario? (instrucao comentario?)*
+instrucao: READ PE conteudoread PD PV
+| PRINT PE conteudoprint PD PV
 | IF PE condicao PD CE instrucoes CD (ELSE CE instrucoes CD)?
 | FOR PE atribuicao PV condicao PV atribuicao PD CE instrucoes CD
 | WHILE PE condicao PD CE instrucoes CD
 | REPEAT PE NUM PD CE instrucoes CD
-| atribuicao
+| atribuicao PV
 
 comentario: C_COMMENT
 
@@ -67,7 +67,7 @@ conteudoespecial: conteudodicionario | conteudo
 conteudodicionario: entrada (VIR entrada)*
 entrada: STRING PP valor
 
-tipo: INT | BOOL | STR | DOUBLE
+tipo: INT | BOOL | STR | DOUBLE | LIST | SET | TUPLE | DICT
 valor: NUM | BOOLEANO | NUMDOUBLE | STRING
 chave: NUM | STRING | VAR
 
@@ -79,6 +79,10 @@ INT: "int"
 STR: "string"
 BOOL: "bool"
 DOUBLE: "double"
+LIST: "list"
+SET: "set"
+TUPLE: "tuple"
+DICT: "dict"
 VIR: ","
 PE: "("
 PD: ")"
@@ -118,7 +122,7 @@ REPEAT: "repeat"
 %ignore WS
 '''
 
-def digito(s):
+""" def digito(s):
   resultado = True
   limite = len(s)
   i = 0
@@ -126,7 +130,7 @@ def digito(s):
     if s[i] > "9" or s[i] < "0":
       resultado = False
     i += 1
-  return resultado
+  return resultado """
 
 class LinguagemProgramacao(Interpreter):
 
@@ -178,39 +182,22 @@ class LinguagemProgramacao(Interpreter):
         valor = self.visit(tree.children[3])
         # print('Valor atribuído: ', valor)
 
-    if valor == None: #Verificar se foi atribuído algum valor à variável
+    if var in self.decls.keys(): #Verificar se há redeclaração
+      self.erros.append(('2: Redeclaração',var))
+    elif valor == None: #Verificar se foi atribuído algum valor à variável
       self.naoInicializadas.append(var)
     elif isinstance(valor,str) and valor[0] != '"': #Verificar se o valor é uma variável (string sem "")
       if '-' in valor: #O valor resulta de um acesso a uma estrutura, a variável e a chave são separados por '-'
         infoEstrutura = valor.split('-')
         variavel = infoEstrutura[0]
-        chave = infoEstrutura[1]
-        if digito(chave): #Se a chave for um dígito é convertida para inteiro
-          chave = int(chave)
         if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro
-          self.erros.append(('1: Variável não declarada',variavel))
-        else:
-          (tipoArmazenado,estrutura) = self.decls[variavel]
-          if tipo != tipoArmazenado:
-            self.erros.append(('3: Erro de tipos na declaração',variavel))
-          elif (isinstance(estrutura,dict) and chave in estrutura.keys()) or ((isinstance(estrutura,list) or isinstance(estrutura,tuple)) and chave < len(estrutura)): #Se a estrutura for uma das válidas e a chave for também válida a declaração torna-se válida
-            self.decls[var] = (tipoArmazenado, estrutura[chave])
-          else:
-            self.erros.append(('2: Acesso a campo não existente',variavel))
-      elif valor in self.decls.keys(): #Verificar se a variável atómica já existe
-        (tipoArmazenado,_) = self.decls[valor]
-        #Só permite atribuir variáveis do mesmo tipo
-        if tipo == tipoArmazenado:
-          self.decls[var] = self.decls[valor]
-        else:
-          self.erros.append(('3: Erro de tipos na declaração',valor))
+          self.erros.append(('1: Não-declaração',variavel))
+      elif valor not in self.decls.keys(): #Verificar se a variável atómica já existe
+        self.erros.append(('1: Não-declaração',valor))
       else:
-        self.erros.append(('1: Variável não declarada',valor))
-    else:
-      if isinstance(valor, str): #Declaração de uma string
-        #Tirar as apas para armazenar a string
-        valor = valor[1:-1]
-      self.decls[var] = (tipo, valor)
+        self.decls[var] = self.decls[valor]
+    else: 
+      self.decls[var] = tipo
     #Transformar a declaração num parágrafo em HTML
     if valor != None:
       print(tipo + ' ' + var + ' = ' + str(valor) + ';')
@@ -275,7 +262,7 @@ class LinguagemProgramacao(Interpreter):
   def factor(self, tree):
     # print('Entrei num factor...')
     if self.nasInstrucoes and isinstance(tree.children[0], Token) and tree.children[0].type == 'VAR' and tree.children[0].value not in self.decls.keys():
-      self.erros.append(('1: Variável não declarada', tree.children[0].value))
+      self.erros.append(('1: Não-declaração', tree.children[0].value))
     else:
       child = tree.children[0]
       if isinstance(child, Token) and child.type == 'NUM':
@@ -335,9 +322,11 @@ class LinguagemProgramacao(Interpreter):
   def chave(self,tree):
     if tree.children[0].type == 'NUM':
       return int(tree.children[0].value)
-    else:
+    elif tree.children[0].type == 'STRING':
       r = (tree.children[0].value)[1:-1]
       return r
+    else: #Variável
+      return str(tree.children[0].value)
 
   def valor(self, tree):
     # print('Entrei num valor...')
@@ -351,6 +340,8 @@ class LinguagemProgramacao(Interpreter):
         return True
     elif isinstance(child,Token) and child.type == 'NUMDOUBLE':
       return float(child.value)
+    elif isinstance(child,Token) and child.type == 'STRING':
+      return str(child.value)
     
 l = Lark(grammar, start='linguagem')
 

@@ -1,15 +1,15 @@
 /* Teste das declaracoes */
-int x = [1,2,3,4]; /* Podemos declarar listas */
+list x = [1,2,3,4]; /* Podemos declarar listas */
 int y = 3; /* Podemos declarar variáveis atómicas */
 int z = y; /* Podemos declarar variáveis com outras variáveis */
-int t = x[1]; /* Podemos declarar variáveis armazenadas nas estruturas */
+int t = x[y]; /* Podemos declarar variáveis armazenadas nas estruturas */
 double d = 2.31;
 string s = "ola";
-double conjunto = {2.3, 0.5, 1.45}; /* Podemos declarar conjuntos */
-bool tuplo = (True, False, True); /* Podemos declarar tuplos */
-bool tuploS = tuplo[1];
+set conjunto = {2.3, 0.5, 1.45}; /* Podemos declarar conjuntos */
+tuple tuplo = (True, False, True); /* Podemos declarar tuplos */
+tuple tuploS = tuplo[1];
 bool bo = True;
-int dicionario = {
+dict dicionario = {
   "quantidade" : 3,
   "soma": 2
 }; /* Podemos declarar dicionários */

@@ -1,12 +1,14 @@
 int x = {1,2,3,76,23};
 string s = "";
 int i = 0;
+string x = 3;
+int y;
 
 while (i < 5) {
     if (s == "") {
         print("Vazio");
-    };
+    }
     s = s + x[i];
     print(s);
     i = i + 1;
-};
+}
