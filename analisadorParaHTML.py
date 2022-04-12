@@ -137,7 +137,11 @@ class LinguagemProgramacao(Interpreter):
   def __init__(self):
     self.decls = {}
     self.naoInicializadas = list()
-    self.erros = list()
+    self.erros = {}
+    self.erros['1: Não-declaração'] = list()
+    self.erros['2: Redeclaração'] = list()
+    self.erros['3: Usado mas não inicializado'] = list()
+    self.erros['4: Declarado mas nunca mencionado'] = list()
     self.contadorIf = 0
     self.niveisIfs = list()
     self.nivelIf = 0
@@ -183,7 +187,7 @@ class LinguagemProgramacao(Interpreter):
         # print('Valor atribuído: ', valor)
 
     if var in self.decls.keys(): #Verificar se há redeclaração
-      self.erros.append(('2: Redeclaração',var))
+      self.erros['2: Redeclaração'].append(var)
     elif valor == None: #Verificar se foi atribuído algum valor à variável
       self.naoInicializadas.append(var)
     elif isinstance(valor,str) and valor[0] != '"': #Verificar se o valor é uma variável (string sem "")
@@ -191,9 +195,9 @@ class LinguagemProgramacao(Interpreter):
         infoEstrutura = valor.split('-')
         variavel = infoEstrutura[0]
         if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro
-          self.erros.append(('1: Não-declaração',variavel))
+          self.erros['1: Não-declaração'].append(variavel)
       elif valor not in self.decls.keys(): #Verificar se a variável atómica já existe
-        self.erros.append(('1: Não-declaração',valor))
+        self.erros['1: Não-declaração'].append(valor)
       else:
         self.decls[var] = self.decls[valor]
     else: 
@@ -262,7 +266,7 @@ class LinguagemProgramacao(Interpreter):
   def factor(self, tree):
     # print('Entrei num factor...')
     if self.nasInstrucoes and isinstance(tree.children[0], Token) and tree.children[0].type == 'VAR' and tree.children[0].value not in self.decls.keys():
-      self.erros.append(('1: Não-declaração', tree.children[0].value))
+      self.erros['1: Não-declaração'].append(tree.children[0].value)
     else:
       child = tree.children[0]
       if isinstance(child, Token) and child.type == 'NUM':
