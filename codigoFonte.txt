@@ -1,14 +1,23 @@
-int x = {1,2,3,76,23};
+set x = {1,"a",3,76,23};
 string s = "";
 int i = 0;
-string x = 3;
+string x = "a";
 int y;
+int b = 3;
+int a = b;
 
 while (i < 5) {
     if (s == "") {
-        print("Vazio");
-    }
-    s = s + x[i];
+        print(y);
+        if(l == True){
+            if(d == False){
+                input(d);
+            } /* nivel 2 */
+        } /* nivel 1 */
+        if(l == 2){
+            print("V");
+        } /* nivel 1 */
+    } /* nivel 0 */
     print(s);
     i = i + 1;
 }

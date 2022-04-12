@@ -136,12 +136,13 @@ class LinguagemProgramacao(Interpreter):
 
   def __init__(self):
     self.decls = {}
-    self.naoInicializadas = list()
+    self.naoInicializadas = set()
+    self.utilizadas = set()
     self.erros = {}
-    self.erros['1: Não-declaração'] = list()
-    self.erros['2: Redeclaração'] = list()
-    self.erros['3: Usado mas não inicializado'] = list()
-    self.erros['4: Declarado mas nunca mencionado'] = list()
+    self.erros['1: Não-declaração'] = set()
+    self.erros['2: Redeclaração'] = set()
+    self.erros['3: Usado mas não inicializado'] = set()
+    self.erros['4: Declarado mas nunca mencionado'] = set()
     self.contadorIf = 0
     self.niveisIfs = list()
     self.nivelIf = 0
@@ -153,12 +154,16 @@ class LinguagemProgramacao(Interpreter):
     self.visit(tree.children[0])
     self.nasInstrucoes = True
     self.visit(tree.children[1])
+    #Verificar as variáveis declaradas mas nunca mencionadas
+    declaradas = set(self.decls.keys())
+    self.erros['4: Declarado mas nunca mencionado'] = declaradas - self.utilizadas
     #Criar o output
     self.output['decls'] = self.decls
     self.output['naoInicializadas'] = self.naoInicializadas
     self.output['erros'] = self.erros
     self.output['contadorIf'] = self.contadorIf
     self.output['niveisIf'] = self.niveisIfs
+    self.output['utilizadas'] = self.utilizadas
     return self.output
 
   def declaracoes(self, tree):
@@ -187,17 +192,18 @@ class LinguagemProgramacao(Interpreter):
         # print('Valor atribuído: ', valor)
 
     if var in self.decls.keys(): #Verificar se há redeclaração
-      self.erros['2: Redeclaração'].append(var)
+      self.erros['2: Redeclaração'].add(var)
     elif valor == None: #Verificar se foi atribuído algum valor à variável
-      self.naoInicializadas.append(var)
+      self.naoInicializadas.add(var)
+      self.decls[var] = tipo
     elif isinstance(valor,str) and valor[0] != '"': #Verificar se o valor é uma variável (string sem "")
       if '-' in valor: #O valor resulta de um acesso a uma estrutura, a variável e a chave são separados por '-'
         infoEstrutura = valor.split('-')
         variavel = infoEstrutura[0]
         if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro
-          self.erros['1: Não-declaração'].append(variavel)
+          self.erros['1: Não-declaração'].add(variavel)
       elif valor not in self.decls.keys(): #Verificar se a variável atómica já existe
-        self.erros['1: Não-declaração'].append(valor)
+        self.erros['1: Não-declaração'].add(valor)
       else:
         self.decls[var] = self.decls[valor]
     else: 
@@ -264,9 +270,15 @@ class LinguagemProgramacao(Interpreter):
     return r[0]
 
   def factor(self, tree):
-    # print('Entrei num factor...')
-    if self.nasInstrucoes and isinstance(tree.children[0], Token) and tree.children[0].type == 'VAR' and tree.children[0].value not in self.decls.keys():
-      self.erros['1: Não-declaração'].append(tree.children[0].value)
+    variavel = tree.children[0].value
+    if isinstance(tree.children[0], Token) and tree.children[0].type == 'VAR': #Adicionar a variável à lista das utilizadas
+      self.utilizadas.add(variavel)
+    if self.nasInstrucoes and isinstance(tree.children[0], Token) and tree.children[0].type == 'VAR':
+      variavel = tree.children[0].value
+      if variavel not in self.decls.keys(): #Se não estiver declarado
+        self.erros['1: Não-declaração'].add(variavel)
+      elif variavel in self.naoInicializadas: #Se não estiver inicializado
+        self.erros['3: Usado mas não inicializado'].add(variavel)
     else:
       child = tree.children[0]
       if isinstance(child, Token) and child.type == 'NUM':
