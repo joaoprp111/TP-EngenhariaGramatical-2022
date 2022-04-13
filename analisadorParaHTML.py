@@ -143,7 +143,13 @@ class LinguagemProgramacao(Interpreter):
     self.erros['2: Redeclaração'] = set()
     self.erros['3: Usado mas não inicializado'] = set()
     self.erros['4: Declarado mas nunca mencionado'] = set()
-    self.contadorIf = 0
+    self.dicinstrucoes = {}
+    self.dicinstrucoes['total'] = 0
+    self.dicinstrucoes['atribuicoes'] = 0
+    self.dicinstrucoes['leitura'] = 0
+    self.dicinstrucoes['escrita'] = 0
+    self.dicinstrucoes['condicionais'] = 0
+    self.dicinstrucoes['ciclicas'] = 0
     self.niveisIfs = list()
     self.nivelIf = 0
     self.nasInstrucoes = False
@@ -161,9 +167,9 @@ class LinguagemProgramacao(Interpreter):
     self.output['decls'] = self.decls
     self.output['naoInicializadas'] = self.naoInicializadas
     self.output['erros'] = self.erros
-    self.output['contadorIf'] = self.contadorIf
-    self.output['niveisIf'] = self.niveisIfs
+    # Mal feito - self.output['niveisIf'] = self.niveisIfs
     self.output['utilizadas'] = self.utilizadas
+    self.output['instrucoes'] = self.dicinstrucoes
     return self.output
 
   def declaracoes(self, tree):
@@ -208,8 +214,10 @@ class LinguagemProgramacao(Interpreter):
         self.decls[var] = self.decls[valor]
     else: 
       self.decls[var] = tipo
-    #Transformar a declaração num parágrafo em HTML
+    #Transformar a declaração num parágrafo em HTML e contar o número de instruções
     if valor != None:
+      self.dicinstrucoes['atribuicoes'] += 1
+      self.dicinstrucoes['total'] += 1
       print(tipo + ' ' + var + ' = ' + str(valor) + ';')
     else:
       print(tipo + ' ' + var + ';')
@@ -236,8 +244,22 @@ class LinguagemProgramacao(Interpreter):
     nivelAtual = self.nivelIf
     for child in tree.children:
       if isinstance(child, Token) and child.type == 'IF':
+        self.dicinstrucoes['condicionais'] += 1
+        self.dicinstrucoes['total'] += 1
         self.niveisIfs.append(nivelAtual)
         self.contadorIf += 1
+      elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
+        self.dicinstrucoes['ciclicas'] += 1
+        self.dicinstrucoes['total'] += 1
+      elif isinstance(child, Token) and child.type == 'READ':
+        self.dicinstrucoes['leitura'] += 1
+        self.dicinstrucoes['total'] += 1
+      elif isinstance(child, Token) and child.type == 'PRINT':
+        self.dicinstrucoes['escrita'] += 1
+        self.dicinstrucoes['total'] += 1
+      elif isinstance(child, Tree) and child.data == 'atribuicao':
+        self.dicinstrucoes['atribuicoes'] += 1
+        self.dicinstrucoes['total'] += 1
       elif isinstance(child, Tree):
         if child.data == 'instrucoes':
           self.nivelIf += 1

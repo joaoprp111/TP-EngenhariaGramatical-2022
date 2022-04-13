@@ -1,23 +1,24 @@
 set x = {1,"a",3,76,23};
 string s = "";
-int i = 0;
-string x = "a";
 int y;
 int b = 3;
 int a = b;
 
 while (i < 5) {
     if (s == "") {
-        print(y);
+        s = "ola";
         if(l == True){
             if(d == False){
-                input(d);
+                d = True;
             } /* nivel 2 */
         } /* nivel 1 */
         if(l == 2){
             print("V");
         } /* nivel 1 */
-    } /* nivel 0 */
+    }
+    else {
+        print("Else");
+    }
     print(s);
     i = i + 1;
 }
