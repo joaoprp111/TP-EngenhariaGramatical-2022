@@ -151,7 +151,8 @@ class LinguagemProgramacao(Interpreter):
     self.dicinstrucoes['condicionais'] = 0
     self.dicinstrucoes['ciclicas'] = 0
     self.niveisIfs = list()
-    self.nivelIf = 0
+    self.nivelIf = -1
+    self.situacoesAninhamentoIf = 0
     self.nasInstrucoes = False
     self.output = {}
 
@@ -167,9 +168,10 @@ class LinguagemProgramacao(Interpreter):
     self.output['decls'] = self.decls
     self.output['naoInicializadas'] = self.naoInicializadas
     self.output['erros'] = self.erros
-    # Mal feito - self.output['niveisIf'] = self.niveisIfs
+    self.output['niveisIf'] = self.niveisIfs
     self.output['utilizadas'] = self.utilizadas
     self.output['instrucoes'] = self.dicinstrucoes
+    self.output['situacoesAninhamentoIf'] = self.situacoesAninhamentoIf
     return self.output
 
   def declaracoes(self, tree):
@@ -214,10 +216,8 @@ class LinguagemProgramacao(Interpreter):
         self.decls[var] = self.decls[valor]
     else: 
       self.decls[var] = tipo
-    #Transformar a declaração num parágrafo em HTML e contar o número de instruções
+    #Transformar a declaração num parágrafo em HTML
     if valor != None:
-      self.dicinstrucoes['atribuicoes'] += 1
-      self.dicinstrucoes['total'] += 1
       print(tipo + ' ' + var + ' = ' + str(valor) + ';')
     else:
       print(tipo + ' ' + var + ';')
@@ -242,15 +242,24 @@ class LinguagemProgramacao(Interpreter):
   def instrucao(self, tree):
     # print('Entrei numa instrução...')
     nivelAtual = self.nivelIf
+    tipoInstrucao = ""
     for child in tree.children:
-      if isinstance(child, Token) and child.type == 'IF':
+      if isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
+        tipoInstrucao = "if"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
+        self.nivelIf = 0
+        nivelAtual = self.nivelIf
         self.niveisIfs.append(nivelAtual)
-        self.contadorIf += 1
+      elif isinstance(child, Token) and child.type == 'IF':
+        tipoInstrucao = "if"
+        self.dicinstrucoes['condicionais'] += 1
+        self.dicinstrucoes['total'] += 1
+        self.niveisIfs.append(self.nivelIf)
       elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
         self.dicinstrucoes['ciclicas'] += 1
         self.dicinstrucoes['total'] += 1
+        tipoInstrucao = "ciclo"
       elif isinstance(child, Token) and child.type == 'READ':
         self.dicinstrucoes['leitura'] += 1
         self.dicinstrucoes['total'] += 1
@@ -261,10 +270,17 @@ class LinguagemProgramacao(Interpreter):
         self.dicinstrucoes['atribuicoes'] += 1
         self.dicinstrucoes['total'] += 1
       elif isinstance(child, Tree):
-        if child.data == 'instrucoes':
+        if child.data == 'instrucoes' and tipoInstrucao == "ciclo":
+          self.nivelIf = 0
+          self.situacoesAninhamentoIf = 0
+          self.visit(child)
+          self.nivelIf = nivelAtual
+        elif child.data == 'instrucoes' and tipoInstrucao == "if":
           self.nivelIf += 1
           self.visit(child)
           self.nivelIf = nivelAtual
+          if self.nivelIf == 0: #Se já tiver visitado todos os filhos e este for o if de nível 0 então estamos presente uma situação de aninhamento
+            self.situacoesAninhamentoIf += 1
         else:
           self.visit(child)
 

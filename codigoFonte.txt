@@ -7,18 +7,26 @@ int a = b;
 while (i < 5) {
     if (s == "") {
         s = "ola";
-        if(l == True){
-            if(d == False){
-                d = True;
-            } /* nivel 2 */
-        } /* nivel 1 */
-        if(l == 2){
-            print("V");
-        } /* nivel 1 */
-    }
-    else {
-        print("Else");
-    }
+        while(i < 10){
+            if(l == True){
+                if(d == False){
+                    d = True;
+                } /* nivel 1 */
+            } /* nivel 0 */
+            if(l == 2){
+                print("V");
+            } /* nivel 0 */
+        }
+    } /* nivel 0 */
+    if ("acores" == "madeira") {
+        print("confusao");
+    } /* nivel 0 */
     print(s);
     i = i + 1;
 }
+
+/* Situações de aninhamento do mesmo tipo
+- Sempre que encontrar uma sequência de estruturas de controlo de níveis sucessivamente maiores, podendo conter instruções a meio desde que não sejam estruturas de controlo de outro tipo. (se forem dão reset ao nível, voltando este a ser 0) 
+
+ Situações de aninhamento de tipos diferentes
+- Sempre que encontrar uma sequência de aninhamentos de qualquer tipo, ou seja a partir do nível 0 existe uma situação de aninhamento até que seja encontrada outra estrutura do mesmo nível */
