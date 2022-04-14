@@ -116,20 +116,79 @@ REPEAT: "repeat"
 %import common.C_COMMENT
 %ignore WS
 '''
-
-""" def digito(s):
-  resultado = True
-  limite = len(s)
-  i = 0
-  while i < limite and resultado:
-    if s[i] > "9" or s[i] < "0":
-      resultado = False
-    i += 1
-  return resultado """
+  
+def criarFicheiroHtml(nome):
+  try:
+    f = open(nome, 'r+', encoding='utf-8')
+    f.truncate(0)
+    return f
+  except:
+    f = open(nome, 'a', encoding='utf-8')
+    return f
+  
+def preencherInicio(ficheiro):
+  conteudo = '''
+<!DOCTYPE html>
+<html>
+  <style>
+    .error {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted black;
+      color: red;
+    }
+    .code {
+      position: relative;
+      display: inline-block;
+    }
+    .error .errortext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -40px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .error .errortext::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 20%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+    .error:hover .errortext {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+  <body>
+    <h2>Análise de código</h2>
+    <pre><code>'''
+  ficheiro.write(conteudo + '\n')
+  
+def preencherFim(ficheiro):
+  conteudo = '''
+    </code></pre>
+  </body>
+</html>'''
+  ficheiro.write(conteudo)
 
 class LinguagemProgramacao(Interpreter):
 
   def __init__(self):
+    self.fHtml = criarFicheiroHtml('outputHtml.html')
+    preencherInicio(self.fHtml)
     self.decls = {}
     self.naoInicializadas = set()
     self.utilizadas = set()
@@ -158,6 +217,8 @@ class LinguagemProgramacao(Interpreter):
     self.visit(tree.children[0])
     self.nasInstrucoes = True
     self.visit(tree.children[1])
+    preencherFim(self.fHtml)
+    self.fHtml.close()
     #Verificar as variáveis declaradas mas nunca mencionadas
     declaradas = set(self.decls.keys())
     self.erros['4: Declarado mas nunca mencionado'] = declaradas - self.utilizadas
@@ -181,7 +242,7 @@ class LinguagemProgramacao(Interpreter):
   def declaracao(self, tree):
     # print('Entrei numa declaração...')
     #print(tree.children)
-    print('<p class="code">')
+    self.fHtml.write('\t\t<p class="code">\n')
     var = None
     tipo = None
     valor = None
@@ -202,23 +263,20 @@ class LinguagemProgramacao(Interpreter):
       self.naoInicializadas.add(var)
       self.decls[var] = tipo
     elif isinstance(valor,str) and valor[0] != '"': #Verificar se o valor é uma variável (string sem "")
-      if '-' in valor: #O valor resulta de um acesso a uma estrutura, a variável e a chave são separados por '-'
-        infoEstrutura = valor.split('-')
+      if '[' or ']' in valor: #O valor resulta de um acesso a uma estrutura
+        infoEstrutura = valor.split('[')
         variavel = infoEstrutura[0]
         if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro
           self.erros['1: Não-declaração'].add(variavel)
       elif valor not in self.decls.keys(): #Verificar se a variável atómica já existe
         self.erros['1: Não-declaração'].add(valor)
-      else:
-        self.decls[var] = self.decls[valor]
-    else: 
-      self.decls[var] = tipo
+    self.decls[var] = tipo
     #Transformar a declaração num parágrafo em HTML
     if valor != None:
-      print(tipo + ' ' + var + ' = ' + str(valor) + ';')
+      self.fHtml.write('\t\t' + tipo + ' ' + var + ' = ' + str(valor) + ';\n')
     else:
-      print(tipo + ' ' + var + ';')
-    print('</p>')
+      self.fHtml.write('\t\t' + tipo + ' ' + var + ';\n')
+    self.fHtml.write('\t\t</p>\n')
 
   def instrucoes(self, tree):
     # print('Entrei nas instruções...')
@@ -313,14 +371,23 @@ class LinguagemProgramacao(Interpreter):
 
   def factor(self, tree):
     variavel = tree.children[0].value
-    if isinstance(tree.children[0], Token) and tree.children[0].type == 'VAR': #Adicionar a variável à lista das utilizadas
+    if isinstance(tree.children[0], Token) and tree.children[0].type == 'VAR':
+      #Adicionar a variável à lista das utilizadas
       self.utilizadas.add(variavel)
-    if self.nasInstrucoes and isinstance(tree.children[0], Token) and tree.children[0].type == 'VAR':
-      variavel = tree.children[0].value
-      if variavel not in self.decls.keys(): #Se não estiver declarado
-        self.erros['1: Não-declaração'].add(variavel)
-      elif variavel in self.naoInicializadas and self.instrucaoAtual not in ['leitura', 'atribuicao']: #Se não estiver inicializado
+      #Verificar se pode usar a variável
+      if self.nasInstrucoes and tree.children[0].value not in self.decls.keys():
+        self.erros['1: Não-declaração'].add(variavel)     
+      elif self.nasInstrucoes and variavel in self.naoInicializadas and self.instrucaoAtual not in ['leitura', 'atribuicao']: #Se não estiver inicializado
         self.erros['3: Usado mas não inicializado'].add(variavel)
+      #Obter o índice da estrutura se existir
+      chave = None
+      for child in tree.children:
+        if isinstance(child, Tree) and child.data == 'chave':
+          chave = self.visit(child)
+      if chave != None:
+        return tree.children[0].value + '[' + str(chave) + ']'
+      else:
+        return tree.children[0].value
     else:
       child = tree.children[0]
       if isinstance(child, Token) and child.type == 'NUM':
@@ -334,8 +401,6 @@ class LinguagemProgramacao(Interpreter):
         return str(child.value)
       elif isinstance(child, Token) and child.type == 'NUMDOUBLE':
         return float(child.value)
-      elif isinstance(child, Token) and child.type == 'VAR':
-        return str(child.value)
       elif isinstance(child, Token) and child.type == 'PER' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'PDR':
         return list()
       elif isinstance(child, Token) and child.type == 'PER' and isinstance(tree.children[1], Tree):
@@ -385,21 +450,6 @@ class LinguagemProgramacao(Interpreter):
       return r
     else: #Variável
       return str(tree.children[0].value)
-
-  def valor(self, tree):
-    # print('Entrei num valor...')
-    child = tree.children[0]
-    if isinstance(child,Token) and child.type == 'NUM':
-      return int(child.value)
-    elif isinstance(child,Token) and child.type == 'BOOLEANO':
-      if child.value == 'False':
-        return False
-      else:
-        return True
-    elif isinstance(child,Token) and child.type == 'NUMDOUBLE':
-      return float(child.value)
-    elif isinstance(child,Token) and child.type == 'STRING':
-      return str(child.value)
     
 l = Lark(grammar, start='linguagem')
 

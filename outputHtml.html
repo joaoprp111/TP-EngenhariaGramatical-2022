@@ -1,0 +1,70 @@
+
+<!DOCTYPE html>
+<html>
+  <style>
+    .error {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted black;
+      color: red;
+    }
+    .code {
+      position: relative;
+      display: inline-block;
+    }
+    .error .errortext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -40px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .error .errortext::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 20%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+    .error:hover .errortext {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+  <body>
+    <h2>Análise de código</h2>
+    <pre><code>
+		<p class="code">
+		list l = [1, 2, 3];
+		</p>
+		<p class="code">
+		int n = l[0];
+		</p>
+		<p class="code">
+		tuple t = ('"idade"', 17);
+		</p>
+		<p class="code">
+		int i = 0;
+		</p>
+		<p class="code">
+		dict d = {'tamanho': 3, 'soma': 55, 'valores': [40, 10, 5]};
+		</p>
+		<p class="code">
+		set s;
+		</p>
+
+    </code></pre>
+  </body>
+</html>

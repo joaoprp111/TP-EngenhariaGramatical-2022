@@ -1,3 +1,5 @@
+list l = [1,2,3];
+int n = l[0];
 tuple t = ("idade", 17);
 int i = 0;
 dict d = {
