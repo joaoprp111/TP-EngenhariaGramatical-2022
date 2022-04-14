@@ -1,32 +1,20 @@
-set x = {1,"a",3,76,23};
-string s = "";
-int y;
-int b = 3;
-int a = b;
+tuple t = ("idade", 17);
+int i = 0;
+dict d = {
+    "tamanho":3,
+    "soma":55,
+    "valores":[40,10,5]
+};
+set s;
 
-while (i < 5) {
-    if (s == "") {
-        s = "ola";
-        while(i < 10){
-            if(l == True){
-                if(d == False){
-                    d = True;
-                } /* nivel 1 */
-            } /* nivel 0 */
-            if(l == 2){
-                print("V");
-            } /* nivel 0 */
-        }
-    } /* nivel 0 */
-    if ("acores" == "madeira") {
-        print("confusao");
-    } /* nivel 0 */
-    print(s);
+print(s);
+print(i);
+while(i < 10){
+    if(d["soma"] > 50){
+        print("+50");
+    }
+    if(i > 5){
+        input(s);
+    }
     i = i + 1;
 }
-
-/* Situações de aninhamento do mesmo tipo
-- Sempre que encontrar uma sequência de estruturas de controlo de níveis sucessivamente maiores, podendo conter instruções a meio desde que não sejam estruturas de controlo de outro tipo. (se forem dão reset ao nível, voltando este a ser 0) 
-
- Situações de aninhamento de tipos diferentes
-- Sempre que encontrar uma sequência de aninhamentos de qualquer tipo, ou seja a partir do nível 0 existe uma situação de aninhamento até que seja encontrada outra estrutura do mesmo nível */

@@ -8,11 +8,7 @@ grammar = '''
 linguagem: declaracoes instrucoes
 
 declaracoes: comentario? declaracao PV comentario? (declaracao PV comentario?)*
-declaracao: tipo VAR (ATRIB tipoatribuicao)?
-
-tipoatribuicao: normal | estrutura
-normal: logic
-estrutura: VAR PER chave PDR
+declaracao: tipo VAR (ATRIB logic)?
 
 instrucoes: instrucao comentario? (instrucao comentario?)*
 instrucao: READ PE conteudoread PD PV
@@ -62,13 +58,12 @@ factor: PE? logic PD?
 | CE conteudoespecial? CD
 | PE conteudo? PD
 
-conteudo: valor (VIR valor)*
+conteudo: factor (VIR factor)*
 conteudoespecial: conteudodicionario | conteudo
 conteudodicionario: entrada (VIR entrada)*
-entrada: STRING PP valor
+entrada: STRING PP factor
 
 tipo: INT | BOOL | STR | DOUBLE | LIST | SET | TUPLE | DICT
-valor: NUM | BOOLEANO | NUMDOUBLE | STRING
 chave: NUM | STRING | VAR
 
 BOOLEANO: "True" | "False"
@@ -150,10 +145,12 @@ class LinguagemProgramacao(Interpreter):
     self.dicinstrucoes['escrita'] = 0
     self.dicinstrucoes['condicionais'] = 0
     self.dicinstrucoes['ciclicas'] = 0
-    self.niveisIfs = list()
+    self.niveisIfs = {}
     self.nivelIf = -1
-    self.situacoesAninhamentoIf = 0
+    self.nivelProfundidade = 0
+    self.totalSituacoesAn = 0
     self.nasInstrucoes = False
+    self.instrucaoAtual = ""
     self.output = {}
 
   def linguagem(self, tree):
@@ -171,7 +168,7 @@ class LinguagemProgramacao(Interpreter):
     self.output['niveisIf'] = self.niveisIfs
     self.output['utilizadas'] = self.utilizadas
     self.output['instrucoes'] = self.dicinstrucoes
-    self.output['situacoesAninhamentoIf'] = self.situacoesAninhamentoIf
+    self.output['totalSituacoesAn'] = self.totalSituacoesAn
     return self.output
 
   def declaracoes(self, tree):
@@ -222,18 +219,6 @@ class LinguagemProgramacao(Interpreter):
     else:
       print(tipo + ' ' + var + ';')
     print('</p>')
-    
-  def tipoatribuicao(self,tree):
-    r = self.visit(tree.children[0])
-    return r
-  
-  def normal(self,tree):
-    return self.visit(tree.children[0])
-  
-  def estrutura(self,tree):
-    variavel = tree.children[0].value
-    chave = self.visit(tree.children[2])
-    return str(variavel) + "-" + str(chave)
 
   def instrucoes(self, tree):
     # print('Entrei nas instruções...')
@@ -241,48 +226,67 @@ class LinguagemProgramacao(Interpreter):
 
   def instrucao(self, tree):
     # print('Entrei numa instrução...')
-    nivelAtual = self.nivelIf
-    tipoInstrucao = ""
+    nivelIf = self.nivelIf
+    nivelProfundidade = self.nivelProfundidade
     for child in tree.children:
+      if isinstance(child, Token) and (child.type == 'IF' or child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT') and self.nivelProfundidade > 0:
+        self.totalSituacoesAn += 1
       if isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
-        tipoInstrucao = "if"
+        self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
         self.nivelIf = 0
-        nivelAtual = self.nivelIf
-        self.niveisIfs.append(nivelAtual)
+        nivelIf = self.nivelIf
+        self.niveisIfs.setdefault(nivelIf, list())
+        self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
       elif isinstance(child, Token) and child.type == 'IF':
-        tipoInstrucao = "if"
+        self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
-        self.niveisIfs.append(self.nivelIf)
+        self.niveisIfs.setdefault(nivelIf, list())
+        self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
       elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
         self.dicinstrucoes['ciclicas'] += 1
         self.dicinstrucoes['total'] += 1
-        tipoInstrucao = "ciclo"
+        self.instrucaoAtual = "ciclo"
       elif isinstance(child, Token) and child.type == 'READ':
+        self.instrucaoAtual = "leitura"
         self.dicinstrucoes['leitura'] += 1
         self.dicinstrucoes['total'] += 1
       elif isinstance(child, Token) and child.type == 'PRINT':
+        self.instrucaoAtual = "escrita"
         self.dicinstrucoes['escrita'] += 1
         self.dicinstrucoes['total'] += 1
       elif isinstance(child, Tree) and child.data == 'atribuicao':
+        self.instrucaoAtual = "atribuicao"
         self.dicinstrucoes['atribuicoes'] += 1
         self.dicinstrucoes['total'] += 1
+        self.visit(child)
       elif isinstance(child, Tree):
-        if child.data == 'instrucoes' and tipoInstrucao == "ciclo":
+        if child.data == 'instrucoes' and self.instrucaoAtual == "ciclo":
+          self.nivelProfundidade += 1
           self.nivelIf = 0
-          self.situacoesAninhamentoIf = 0
           self.visit(child)
-          self.nivelIf = nivelAtual
-        elif child.data == 'instrucoes' and tipoInstrucao == "if":
+          self.nivelIf = nivelIf
+          self.nivelProfundidade = nivelProfundidade
+        elif child.data == 'instrucoes' and self.instrucaoAtual == "condicional":
+          self.nivelProfundidade += 1
           self.nivelIf += 1
           self.visit(child)
-          self.nivelIf = nivelAtual
-          if self.nivelIf == 0: #Se já tiver visitado todos os filhos e este for o if de nível 0 então estamos presente uma situação de aninhamento
-            self.situacoesAninhamentoIf += 1
+          self.nivelIf = nivelIf
+          self.nivelProfundidade = nivelProfundidade
         else:
           self.visit(child)
+          
+  def atribuicao(self,tree):
+    #Se for feita uma atribuiçao a uma var não inicializada, já passa a estar inicializada
+    if (isinstance(tree.children[0],Token) and tree.children[0].type == 'VAR') and tree.children[0].value in self.naoInicializadas:
+      self.naoInicializadas.remove(tree.children[0].value)
+  
+  def conteudoread(self,tree):
+    if (isinstance(tree.children[0],Token) and tree.children[0].type == 'VAR') and tree.children[0].value in self.naoInicializadas:
+      self.naoInicializadas.remove(tree.children[0].value)
+      self.utilizadas.add(tree.children[0].value)
 
   def tipo(self, tree):
     return str(tree.children[0])
@@ -315,7 +319,7 @@ class LinguagemProgramacao(Interpreter):
       variavel = tree.children[0].value
       if variavel not in self.decls.keys(): #Se não estiver declarado
         self.erros['1: Não-declaração'].add(variavel)
-      elif variavel in self.naoInicializadas: #Se não estiver inicializado
+      elif variavel in self.naoInicializadas and self.instrucaoAtual not in ['leitura', 'atribuicao']: #Se não estiver inicializado
         self.erros['3: Usado mas não inicializado'].add(variavel)
     else:
       child = tree.children[0]
