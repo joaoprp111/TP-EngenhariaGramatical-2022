@@ -329,7 +329,13 @@ class LinguagemProgramacao(Interpreter):
         self.dicinstrucoes['total'] += 1
         self.visit(child)
       elif isinstance(child, Tree):
-        if child.data == 'instrucoes' and self.instrucaoAtual == "ciclo":
+        if child.data == 'conteudoread':
+          self.visit(child)
+        elif child.data == 'conteudoprint':
+          self.visit(child)
+        elif child.data == 'condicao':
+          r = self.visit(child)
+        elif child.data == 'instrucoes' and self.instrucaoAtual == "ciclo":
           self.nivelProfundidade += 1
           self.nivelIf = 0
           self.visit(child)
@@ -341,9 +347,10 @@ class LinguagemProgramacao(Interpreter):
           self.visit(child)
           self.nivelIf = nivelIf
           self.nivelProfundidade = nivelProfundidade
-        else:
-          self.visit(child)
     self.fHtml.write('\n\t\t</p>\n')
+    
+  def condicao(self,tree):
+    print('CONDICAO: ', tree.children)
           
   def atribuicao(self,tree):
     #Se for feita uma atribuiçao a uma var não inicializada, já passa a estar inicializada
@@ -359,10 +366,36 @@ class LinguagemProgramacao(Interpreter):
         self.fHtml.write(child.value)
   
   def conteudoread(self,tree):
-    if (isinstance(tree.children[0],Token) and tree.children[0].type == 'VAR') and tree.children[0].value in self.naoInicializadas:
-      self.fHtml.write(tree.children[0].value)
-      self.naoInicializadas.remove(tree.children[0].value)
-      self.utilizadas.add(tree.children[0].value)
+    for child in tree.children:
+      if isinstance(child,Token) and child.type == 'VAR' and child.value in self.naoInicializadas:
+        self.fHtml.write(child.value)
+        self.naoInicializadas.remove(child.value)
+        self.utilizadas.add(child.value)
+      elif isinstance(child,Token) and child.type == 'VAR' and child.value not in self.decls.keys():
+        self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+      elif isinstance(child,Token):
+        self.fHtml.write(child.value)
+      elif isinstance(child,Tree) and child.data == 'chave':
+        chave = self.visit(child)
+        self.fHtml.write(chave)
+        
+  def conteudoprint(self,tree):
+    for child in tree.children:
+      if isinstance(child,Tree) and child.data == 'chave':
+        chave = self.visit(child)
+        self.fHtml.write(chave)
+      elif isinstance(child,Tree):
+        r = self.visit(child)
+        if r[0] != '"' and r not in self.decls.keys():
+          self.fHtml.write('<div class="error">' + r + '<span class="errortext">Variável não declarada</span></div>')
+          self.erros['1: Não-declaração'].add(r)
+        elif r[0] != '"' and r in self.naoInicializadas:
+          self.fHtml.write('<div class="error">' + r + '<span class="errortext">Variável não inicializada</span></div>')
+          self.erros['3: Usado mas não inicializado'].add(r)
+        else:
+          self.fHtml.write(r)
+      elif isinstance(child,Token):
+        self.fHtml.write(child.value)
 
   def tipo(self, tree):
     return str(tree.children[0])
@@ -388,58 +421,47 @@ class LinguagemProgramacao(Interpreter):
     return r[0]
 
   def factor(self, tree):
-    variavel = None
-    chave = None
     for child in tree.children:
-      if isinstance(child, Token) and child.type == 'VAR':
+      if isinstance(child, Token) and child.type == 'VAR' and len(tree.children) > 1:
+        self.utilizadas.add(child.value)
+        chave = self.visit(tree.children[2])
+        return str(child.value) + '[' + str(chave) + ']'
+      elif isinstance(child, Token) and child.type == 'VAR':
         #Adicionar a variável à lista das utilizadas
         self.utilizadas.add(child.value)
-        #Verificar se pode usar a variável
-        if self.nasInstrucoes and child.value not in self.decls.keys():
-          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
-          self.erros['1: Não-declaração'].add(child.value)     
-        elif self.nasInstrucoes and child.value in self.naoInicializadas and self.instrucaoAtual not in ['leitura', 'atribuicao']: #Se não estiver inicializado
-          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não inicializada</span></div>')
-          self.erros['3: Usado mas não inicializado'].add(child.value)
-        variavel = child.value
+        return str(child.value)
       elif isinstance(child, Tree) and child.data == 'chave':
         #Obter o índice da estrutura se existir
         chave = self.visit(child)
-      elif isinstance(child, Token) and child.type == 'NUM' and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'NUM':
         return int(child.value)
-      elif isinstance(child, Token) and child.type == 'BOOLEANO' and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'BOOLEANO':
         if child.value == "False":
           return False
         elif child.value == "True":
           return True
-      elif isinstance(child, Token) and child.type == 'STRING' and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'STRING':
         return str(child.value)
-      elif isinstance(child, Token) and child.type == 'NUMDOUBLE' and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'NUMDOUBLE':
         return float(child.value)
-      elif isinstance(child, Token) and child.type == 'PER' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'PDR' and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'PER' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'PDR':
         return list()
-      elif isinstance(child, Token) and child.type == 'PER' and isinstance(tree.children[1], Tree) and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'PER' and isinstance(tree.children[1], Tree):
         lista = self.visit(tree.children[1])
         return lista
-      elif isinstance(child, Token) and child.type == 'CE' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'CD' and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'CE' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'CD':
         return {}
-      elif isinstance(child, Token) and child.type == 'CE' and isinstance(tree.children[1], Tree) and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'CE' and isinstance(tree.children[1], Tree):
         estrutura = self.visit(tree.children[1])
         if isinstance(estrutura, dict):
           return estrutura
         else:
           return set(estrutura)
-      elif isinstance(child, Token) and child.type == 'PE' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'PD' and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'PE' and isinstance(tree.children[1], Token) and (tree.children[1]).type == 'PD':
         return tuple()
-      elif isinstance(child, Token) and child.type == 'PE' and isinstance(tree.children[1], Tree) and not self.nasInstrucoes:
+      elif isinstance(child, Token) and child.type == 'PE' and isinstance(tree.children[1], Tree):
         tuplo = self.visit(tree.children[1])
         return tuple(tuplo)
-      elif self.nasInstrucoes and isinstance(child,Token):
-        self.fHtml.write(child.value)
-    if chave != None:
-      return variavel + '[' + str(chave) + ']'
-    else:
-      return variavel
       
   def conteudoespecial(self,tree):
     r = self.visit(tree.children[0])
@@ -464,12 +486,22 @@ class LinguagemProgramacao(Interpreter):
     return res
 
   def chave(self,tree):
+    if tree.children[0].type == 'NUM' and self.nasInstrucoes:
+      self.fHtml.write(tree.children[0].value)
+      return int(tree.children[0].value)
     if tree.children[0].type == 'NUM':
       return int(tree.children[0].value)
+    elif tree.children[0].type == 'STRING' and self.nasInstrucoes:
+      self.fHtml.write(tree.children[0].value)
+      r = (tree.children[0].value)[1:-1]
+      return r
     elif tree.children[0].type == 'STRING':
       r = (tree.children[0].value)[1:-1]
       return r
-    else: #Variável
+    elif tree.children[0].type == 'VAR' and self.nasInstrucoes:
+      self.fHtml.write(tree.children[0].value)
+      return str(tree.children[0].value)
+    elif tree.children[0].type == 'VAR':
       return str(tree.children[0].value)
     
 l = Lark(grammar, start='linguagem')
