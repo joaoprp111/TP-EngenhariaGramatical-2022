@@ -1,5 +1,6 @@
 list l = [1,2,3];
 int n = l[0];
+set se = {1,2,3};
 tuple t = ("idade", 17);
 int i = 0;
 dict d = {
@@ -8,8 +9,9 @@ dict d = {
     "valores":[40,10,5]
 };
 set s;
+print({"soma":2,"b":3});
 
-input(s["tamanho"]);
+print(s["tamanho"]);
 if ((2) / 3){
     print(ss[2]);
 }
