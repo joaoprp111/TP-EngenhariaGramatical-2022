@@ -9,14 +9,7 @@ dict d = {
 };
 set s;
 
-print(s);
-print(i);
-while(i < 10){
-    if(d["soma"] > 50){
-        print("+50");
-    }
-    if(i > 5){
-        input(s);
-    }
-    i = i + 1;
+input(s["tamanho"]);
+if ((2) / 3){
+    print(ss[2]);
 }

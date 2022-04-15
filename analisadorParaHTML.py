@@ -350,8 +350,9 @@ class LinguagemProgramacao(Interpreter):
     self.fHtml.write('\n\t\t</p>\n')
     
   def condicao(self,tree):
-    print('CONDICAO: ', tree.children)
-          
+    r = self.visit(tree.children[0])
+    #print('CONDICAO: ', r)
+    
   def atribuicao(self,tree):
     #Se for feita uma atribuiçao a uma var não inicializada, já passa a estar inicializada
     if (isinstance(tree.children[0],Token) and tree.children[0].type == 'VAR') and tree.children[0].value in self.naoInicializadas:
@@ -376,24 +377,20 @@ class LinguagemProgramacao(Interpreter):
       elif isinstance(child,Token):
         self.fHtml.write(child.value)
       elif isinstance(child,Tree) and child.data == 'chave':
-        chave = self.visit(child)
+        chave = str(self.visit(child))
         self.fHtml.write(chave)
         
   def conteudoprint(self,tree):
     for child in tree.children:
       if isinstance(child,Tree) and child.data == 'chave':
-        chave = self.visit(child)
+        chave = str(self.visit(child))
         self.fHtml.write(chave)
       elif isinstance(child,Tree):
-        r = self.visit(child)
-        if r[0] != '"' and r not in self.decls.keys():
-          self.fHtml.write('<div class="error">' + r + '<span class="errortext">Variável não declarada</span></div>')
-          self.erros['1: Não-declaração'].add(r)
-        elif r[0] != '"' and r in self.naoInicializadas:
-          self.fHtml.write('<div class="error">' + r + '<span class="errortext">Variável não inicializada</span></div>')
-          self.erros['3: Usado mas não inicializado'].add(r)
-        else:
-          self.fHtml.write(r)
+        self.visit(child)
+      elif isinstance(child,Token) and child.type == 'VAR' and child.value not in self.decls.keys():
+        self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+      elif isinstance(child,Token) and child.type == 'VAR' and child.value in self.naoInicializadas:
+        self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não inicializada</span></div>')
       elif isinstance(child,Token):
         self.fHtml.write(child.value)
 
@@ -417,16 +414,37 @@ class LinguagemProgramacao(Interpreter):
     return r[0]
 
   def termo(self,tree):
+    """ termo: PE? exp MUL termo PD?
+    | PE? exp DIV termo PD?
+    | PE? exp MOD termo PD?
+    | PE? factor PD? """
     r = self.visit_children(tree)
+    print('TERMO: ',r)
     return r[0]
 
   def factor(self, tree):
     for child in tree.children:
       if isinstance(child, Token) and child.type == 'VAR' and len(tree.children) > 1:
+        if child.value not in self.decls.keys():
+          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+          self.erros['1: Não-declaração'].add(child.value)
+        elif child.value in self.naoInicializadas:
+          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não inicializada</span></div>')
+          self.erros['3: Usado mas não inicializado'].add(child.value)
+        else:
+          self.fHtml.write(child.value)
         self.utilizadas.add(child.value)
         chave = self.visit(tree.children[2])
         return str(child.value) + '[' + str(chave) + ']'
       elif isinstance(child, Token) and child.type == 'VAR':
+        if child.value not in self.decls.keys():
+          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+          self.erros['1: Não-declaração'].add(child.value)
+        elif child.value in self.naoInicializadas:
+          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não inicializada</span></div>')
+          self.erros['3: Usado mas não inicializado'].add(child.value)
+        else:
+          self.fHtml.write(child.value)
         #Adicionar a variável à lista das utilizadas
         self.utilizadas.add(child.value)
         return str(child.value)
@@ -486,21 +504,14 @@ class LinguagemProgramacao(Interpreter):
     return res
 
   def chave(self,tree):
-    if tree.children[0].type == 'NUM' and self.nasInstrucoes:
-      self.fHtml.write(tree.children[0].value)
-      return int(tree.children[0].value)
     if tree.children[0].type == 'NUM':
       return int(tree.children[0].value)
-    elif tree.children[0].type == 'STRING' and self.nasInstrucoes:
-      self.fHtml.write(tree.children[0].value)
-      r = (tree.children[0].value)[1:-1]
+    elif self.nasInstrucoes and tree.children[0].type == 'STRING':
+      r = (tree.children[0].value)
       return r
     elif tree.children[0].type == 'STRING':
       r = (tree.children[0].value)[1:-1]
       return r
-    elif tree.children[0].type == 'VAR' and self.nasInstrucoes:
-      self.fHtml.write(tree.children[0].value)
-      return str(tree.children[0].value)
     elif tree.children[0].type == 'VAR':
       return str(tree.children[0].value)
     
