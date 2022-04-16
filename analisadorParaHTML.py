@@ -243,39 +243,52 @@ class LinguagemProgramacao(Interpreter):
     # print('Entrei numa declaração...')
     #print(tree.children)
     self.fHtml.write('\t\t<p class="code">\n')
+    self.fHtml.write('\t\t')
     var = None
     tipo = None
     valor = None
     for child in tree.children:
-      if isinstance(child, Token) and child.type == 'VAR': #Visita o variável declarada
-        # print('Variável declarada: ', child.value)
+      if isinstance(child, Token) and child.type == 'VAR' and child.value in self.decls.keys(): #Visita a variável declarada
         var = child.value
+        self.erros['2: Redeclaração'].add(var)
+        self.fHtml.write('<div class="error">' + var + '<span class="errortext">Variável redeclarada</span></div>')
+      elif  isinstance(child, Token) and child.type == 'VAR':
+        var = child.value
+        self.fHtml.write(var)
       elif isinstance(child, Tree) and child.data == 'tipo': #Visita o tipo da declaração
         tipo = self.visit(child)
-        # print('Tipo: ', tipo)
+        self.fHtml.write(tipo + ' ')
       elif isinstance(child, Token) and child.type == 'ATRIB': #Se houver atribuição visita o valor que está a ser declarado
         valor = self.visit(tree.children[3])
-        # print('Valor atribuído: ', valor)
-
-    if var in self.decls.keys(): #Verificar se há redeclaração
-      self.erros['2: Redeclaração'].add(var)
-    elif valor == None: #Verificar se foi atribuído algum valor à variável
+        if valor == None:
+          self.naoInicializadas.add(var)
+          self.decls[var] = tipo
+          self.fHtml.write(';\n')
+        elif isinstance(valor,str) and valor[0] != '"':
+          self.fHtml.write(' = ')
+          if '[' or ']' in valor: #O valor resulta de um acesso a uma estrutura
+            infoEstrutura = valor.split('[')
+            variavel = infoEstrutura[0]
+            if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro
+              self.erros['1: Não-declaração'].add(variavel)
+              self.fHtml.write('<div class="error">' + variavel + '<span class="errortext">Variável redeclarada</span></div>' + '[' + infoEstrutura[1] + ';\n')
+            elif variavel in self.naoInicializadas:
+              self.fHtml.write('<div class="error">' + variavel + '<span class="errortext">Variável não inicializada</span></div>' + '[' + infoEstrutura[1] + ';\n')
+            else:
+              self.fHtml.write(variavel + '[' + infoEstrutura[1] + ';\n')
+          elif valor not in self.decls.keys(): #Verificar se a variável atómica já existe
+            self.erros['1: Não-declaração'].add(valor)
+            self.fHtml.write('<div class="error">' + valor + '<span class="errortext">Variável redeclarada</span></div>;\n')
+        else:
+          self.fHtml.write(' = ')
+          self.fHtml.write(str(valor) + ';\n')
+          
+    if valor == None: #Caso nunca tenha existido atribuição na declaração
       self.naoInicializadas.add(var)
       self.decls[var] = tipo
-    elif isinstance(valor,str) and valor[0] != '"': #Verificar se o valor é uma variável (string sem "")
-      if '[' or ']' in valor: #O valor resulta de um acesso a uma estrutura
-        infoEstrutura = valor.split('[')
-        variavel = infoEstrutura[0]
-        if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro
-          self.erros['1: Não-declaração'].add(variavel)
-      elif valor not in self.decls.keys(): #Verificar se a variável atómica já existe
-        self.erros['1: Não-declaração'].add(valor)
+      self.fHtml.write(';\n')
+      
     self.decls[var] = tipo
-    #Transformar a declaração num parágrafo em HTML
-    if valor != None:
-      self.fHtml.write('\t\t' + tipo + ' ' + var + ' = ' + str(valor) + ';\n')
-    else:
-      self.fHtml.write('\t\t' + tipo + ' ' + var + ';\n')
     self.fHtml.write('\t\t</p>\n')
 
   def instrucoes(self, tree):
@@ -292,10 +305,7 @@ class LinguagemProgramacao(Interpreter):
         #O \n é necessário porque a seguir a este token chegam instruções aninhadas
         self.fHtml.write(child.value)
         self.fHtml.write('\n')
-      elif isinstance(child,Token): 
-        #Escreve qualquer token no html
-        self.fHtml.write(child.value)
-      if isinstance(child, Token) and (child.type == 'IF' or child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT') and self.nivelProfundidade > 0:
+      elif isinstance(child, Token) and (child.type == 'IF' or child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT') and self.nivelProfundidade > 0:
         self.totalSituacoesAn += 1
       if isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
         self.instrucaoAtual = "condicional"
@@ -384,49 +394,59 @@ class LinguagemProgramacao(Interpreter):
     return str(tree.children[0])
 
   def logic(self,tree):
+    res = None
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
       elif isinstance(child,Tree) and child.data == 'logicnot':
-        return self.visit(child)
+        res = self.visit(child)
       elif isinstance(child,Tree):
         self.visit(child)
+    return res
 
   def logicnot(self,tree):
+    res = None
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
       elif isinstance(child,Tree) and child.data == 'relac':
-        return self.visit(child)
+        res = self.visit(child)
       elif isinstance(child,Tree):
         self.visit(child)
+    return res
 
   def relac(self,tree):
+    res = None
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
       elif isinstance(child,Tree) and child.data == 'exp':
-        return self.visit(child)
+        res = self.visit(child)
       elif isinstance(child,Tree):
         self.visit(child)
+    return res
 
   def exp(self,tree):
+    res = None
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
       elif isinstance(child,Tree) and child.data == 'termo':
-        return self.visit(child)
+        res = self.visit(child)
       elif isinstance(child,Tree):
         self.visit(child)
+    return res
 
   def termo(self,tree):
+    res = None
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
       elif isinstance(child,Tree) and child.data == 'factor':
-        return self.visit(child)
+        res = self.visit(child)
       elif isinstance(child,Tree):
         self.visit(child)
+    return res
 
   def factor(self, tree):
     for child in tree.children:

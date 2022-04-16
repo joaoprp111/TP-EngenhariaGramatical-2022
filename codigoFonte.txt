@@ -1,8 +1,9 @@
 list l = [1,2,3];
 int n = l[0];
 set se = {1,2,3};
+string str = "ola";
 tuple t = ("idade", 17);
-int i = 0;
+int l = 0;
 dict d = {
     "tamanho":3,
     "soma":55,
@@ -12,6 +13,6 @@ set s;
 print({"soma":2,"b":3});
 
 print(s["tamanho"]);
-if ((2) / 3){
+if (False == ((3 * 2) > 1)){
     print(ss[2]);
 }
