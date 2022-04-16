@@ -2,6 +2,42 @@
 <!DOCTYPE html>
 <html>
   <style>
+    .info {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted black;
+      color: rgb(142, 142, 248);
+    }
+    .info .infotext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -40px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .info .infotext::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 20%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+    .info:hover .infotext {
+      visibility: visible;
+      opacity: 1;
+    }
     .error {
       position: relative;
       display: inline-block;
@@ -46,43 +82,40 @@
   <body>
     <h2>Análise de código</h2>
     <pre><code>
+	<p class="code">
+	list l = [1, 2, 3];
+	</p>
+	<p class="code">
+	print(<div class="error">str<span class="errortext">Variável não declarada</span></div>);
+	</p>
+	<p class="code">
+	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(True){
 		<p class="code">
-		list l = [1, 2, 3];
+	print(l[2]);
 		</p>
 		<p class="code">
-		int n = l[0];
-		</p>
-		<p class="code">
-		set se = {1, 2, 3};
-		</p>
-		<p class="code">
-		string str = "ola";
-		</p>
-		<p class="code">
-		tuple t = ('"idade"', 17);
-		</p>
-		<p class="code">
-		int <div class="error">l<span class="errortext">Variável redeclarada</span></div> = 0;
-		</p>
-		<p class="code">
-		dict d = {'tamanho': 3, 'soma': 55, 'valores': [40, 10, 5]};
-		</p>
-		<p class="code">
-		set s;
-		</p>
-		<p class="code">
-		print({"soma":2,"b":3});
-		</p>
-		<p class="code">
-		print(<div class="error">s<span class="errortext">Variável não inicializada</span></div>["tamanho"]);
-		</p>
-		<p class="code">
-		if(False==((3*2)>1)){
-		<p class="code">
-		print(<div class="error">ss<span class="errortext">Variável não declarada</span></div>[2]);
-		</p>
+	<div class="info">if<span class="infotext">Nível de aninhamento: 1</span></div>(<div class="error">a<span class="errortext">Variável não declarada</span></div>><div class="error">b<span class="errortext">Variável não declarada</span></div>){
+			<p class="code">
+	input(<div class="error">d<span class="errortext">Variável não declarada</span></div>);
+			</p>
 }
 		</p>
+		<p class="code">
+	while(<div class="error">i<span class="errortext">Variável não declarada</span></div><10){
+			<p class="code">
+	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(l[0]>0){
+				<p class="code">
+	l[2]=56;
+				</p>
+}
+			</p>
+			<p class="code">
+	print(<div class="error">s<span class="errortext">Variável não declarada</span></div>);
+			</p>
+}
+		</p>
+}
+	</p>
 
     </code></pre>
   </body>

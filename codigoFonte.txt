@@ -1,18 +1,15 @@
 list l = [1,2,3];
-int n = l[0];
-set se = {1,2,3};
-string str = "ola";
-tuple t = ("idade", 17);
-int l = 0;
-dict d = {
-    "tamanho":3,
-    "soma":55,
-    "valores":[40,10,5]
-};
-set s;
-print({"soma":2,"b":3});
 
-print(s["tamanho"]);
-if (False == ((3 * 2) > 1)){
-    print(ss[2]);
+print(str);
+if (True){
+    print(l[2]);
+    if(a > b){
+        input(d);
+    }
+    while(i < 10){
+        if(l[0] > 0){
+            l[2] = 56;
+        }
+        print(s);
+    }
 }

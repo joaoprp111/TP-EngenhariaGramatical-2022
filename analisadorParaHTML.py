@@ -130,6 +130,42 @@ def preencherInicio(ficheiro):
 <!DOCTYPE html>
 <html>
   <style>
+    .info {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted black;
+      color: rgb(142, 142, 248);
+    }
+    .info .infotext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -40px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .info .infotext::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 20%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+    .info:hover .infotext {
+      visibility: visible;
+      opacity: 1;
+    }
     .error {
       position: relative;
       display: inline-block;
@@ -242,8 +278,8 @@ class LinguagemProgramacao(Interpreter):
   def declaracao(self, tree):
     # print('Entrei numa declaração...')
     #print(tree.children)
-    self.fHtml.write('\t\t<p class="code">\n')
-    self.fHtml.write('\t\t')
+    self.fHtml.write('\t<p class="code">\n')
+    self.fHtml.write('\t')
     var = None
     tipo = None
     valor = None
@@ -289,7 +325,7 @@ class LinguagemProgramacao(Interpreter):
       self.fHtml.write(';\n')
       
     self.decls[var] = tipo
-    self.fHtml.write('\t\t</p>\n')
+    self.fHtml.write('\t</p>\n')
 
   def instrucoes(self, tree):
     # print('Entrei nas instruções...')
@@ -299,40 +335,50 @@ class LinguagemProgramacao(Interpreter):
     # print('Entrei numa instrução...')
     nivelIf = self.nivelIf
     nivelProfundidade = self.nivelProfundidade
-    self.fHtml.write('\t\t<p class="code">\n\t\t')
+    numTabs = nivelProfundidade * '\t'
+    self.fHtml.write(numTabs)
+    self.fHtml.write('\t<p class="code">\n\t')
     for child in tree.children:
+      if isinstance(child, Token) and (child.type == 'IF' or child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT') and self.nivelProfundidade > 0:
+        self.totalSituacoesAn += 1
+        
       if isinstance(child,Token) and child.type == 'CE':
         #O \n é necessário porque a seguir a este token chegam instruções aninhadas
         self.fHtml.write(child.value)
         self.fHtml.write('\n')
-      elif isinstance(child, Token) and (child.type == 'IF' or child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT') and self.nivelProfundidade > 0:
-        self.totalSituacoesAn += 1
-      if isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
+      elif isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
         self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
         self.nivelIf = 0
         nivelIf = self.nivelIf
         self.niveisIfs.setdefault(nivelIf, list())
+        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
       elif isinstance(child, Token) and child.type == 'IF':
         self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
         self.niveisIfs.setdefault(nivelIf, list())
+        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
       elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
+        self.fHtml.write(child.value)
         self.dicinstrucoes['ciclicas'] += 1
         self.dicinstrucoes['total'] += 1
         self.instrucaoAtual = "ciclo"
       elif isinstance(child, Token) and child.type == 'READ':
+        self.fHtml.write(child.value)
         self.instrucaoAtual = "leitura"
         self.dicinstrucoes['leitura'] += 1
         self.dicinstrucoes['total'] += 1
       elif isinstance(child, Token) and child.type == 'PRINT':
+        self.fHtml.write(child.value)
         self.instrucaoAtual = "escrita"
         self.dicinstrucoes['escrita'] += 1
         self.dicinstrucoes['total'] += 1
+      elif isinstance(child,Token):
+        self.fHtml.write(child.value)
       elif isinstance(child, Tree) and child.data == 'atribuicao':
         self.instrucaoAtual = "atribuicao"
         self.dicinstrucoes['atribuicoes'] += 1
@@ -344,7 +390,7 @@ class LinguagemProgramacao(Interpreter):
         elif child.data == 'logic':
           self.visit(child)
         elif child.data == 'condicao':
-          r = self.visit(child)
+          self.visit(child)
         elif child.data == 'instrucoes' and self.instrucaoAtual == "ciclo":
           self.nivelProfundidade += 1
           self.nivelIf = 0
@@ -357,24 +403,30 @@ class LinguagemProgramacao(Interpreter):
           self.visit(child)
           self.nivelIf = nivelIf
           self.nivelProfundidade = nivelProfundidade
-    self.fHtml.write('\n\t\t</p>\n')
+    self.fHtml.write('\n')
+    self.fHtml.write(numTabs)
+    self.fHtml.write('\t</p>\n')
     
   def condicao(self,tree):
     r = self.visit(tree.children[0])
     #print('CONDICAO: ', r)
     
   def atribuicao(self,tree):
-    #Se for feita uma atribuiçao a uma var não inicializada, já passa a estar inicializada
-    if (isinstance(tree.children[0],Token) and tree.children[0].type == 'VAR') and tree.children[0].value in self.naoInicializadas:
-      self.fHtml.write(tree.children[0].value)
-      self.naoInicializadas.remove(tree.children[0].value)
-    elif isinstance(tree.children[0],Token) and tree.children[0].type == 'VAR':
-      self.fHtml.write(tree.children[0].value)
-    for child in tree.children[1:]:
-      if isinstance(child,Token) and child.type == 'ATRIB':
-        self.fHtml.write(' ' + child.value + ' ')
+    for child in tree.children:
+      if (isinstance(child,Token) and child.type == 'VAR') and child.value in self.naoInicializadas:
+        self.fHtml.write(child.value)
+        self.naoInicializadas.remove(child.value)
+      elif (isinstance(child,Token) and child.type == 'VAR') and child.value not in self.decls.keys():
+        self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+      elif (isinstance(child,Token) and child.type == 'VAR'):
+        self.fHtml.write(child.value)
       elif isinstance(child,Token):
         self.fHtml.write(child.value)
+      elif isinstance(child,Tree) and child.data == 'chave':
+        chave = self.visit(child)
+        self.fHtml.write(str(chave))
+      elif isinstance(child,Tree):
+        self.visit(child)
   
   def conteudoread(self,tree):
     for child in tree.children:
