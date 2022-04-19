@@ -228,18 +228,30 @@ class LinguagemProgramacao(Interpreter):
     print(2)
     self.naoInicializadas = set()
     self.utilizadas = set()
-    self.erros = {}
-    self.erros['1: Não-declaração'] = set()
-    self.erros['2: Redeclaração'] = set()
-    self.erros['3: Usado mas não inicializado'] = set()
-    self.erros['4: Declarado mas nunca mencionado'] = set()
-    self.dicinstrucoes = {}
-    self.dicinstrucoes['total'] = 0
-    self.dicinstrucoes['atribuicoes'] = 0
-    self.dicinstrucoes['leitura'] = 0
-    self.dicinstrucoes['escrita'] = 0
-    self.dicinstrucoes['condicionais'] = 0
-    self.dicinstrucoes['ciclicas'] = 0
+    self.erros = {
+      '1: Não-declaração' : set(),
+      '2: Redeclaração' : set(),
+      '3: Usado mas não inicializado' : set(),
+      '4: Declarado mas nunca mencionado' : set() 
+    }
+    # self.erros['1: Não-declaração'] = set()
+    # self.erros['2: Redeclaração'] = set()
+    # self.erros['3: Usado mas não inicializado'] = set()
+    # self.erros['4: Declarado mas nunca mencionado'] = set()
+    self.dicinstrucoes = {
+      'total' : 0,
+      'atribuicoes' : 0,
+      'leitura' : 0,
+      'escrita' : 0,
+      'condicionais' :0,
+      'ciclicas' : 0
+    }
+    # self.dicinstrucoes['total'] = 0
+    # self.dicinstrucoes['atribuicoes'] = 0
+    # self.dicinstrucoes['leitura'] = 0
+    # self.dicinstrucoes['escrita'] = 0
+    # self.dicinstrucoes['condicionais'] = 0
+    # self.dicinstrucoes['ciclicas'] = 0
     self.niveisIfs = {}
     self.nivelIf = -1
     self.nivelProfundidade = 0
