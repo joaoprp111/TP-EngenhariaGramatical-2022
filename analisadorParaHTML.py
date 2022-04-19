@@ -225,7 +225,7 @@ class LinguagemProgramacao(Interpreter):
     self.fHtml = criarFicheiroHtml('outputHtml.html')
     preencherInicio(self.fHtml)
     self.decls = {}
-    print(2)
+    #print(2)
     self.naoInicializadas = set()
     self.utilizadas = set()
     self.erros = {
@@ -359,6 +359,8 @@ class LinguagemProgramacao(Interpreter):
         self.fHtml.write(child.value)
         self.fHtml.write('\n')
       elif isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
+        #adiciona a condição ao armazenamento das condições
+        #se a condição for vazia o corpo é escrito e dá reset
         self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
@@ -368,6 +370,8 @@ class LinguagemProgramacao(Interpreter):
         self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
       elif isinstance(child, Token) and child.type == 'IF':
+        #adiciona a condição ao armazenamento das condições
+        #se a condição for vazia o corpo é escrito e dá reset
         self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
@@ -375,6 +379,7 @@ class LinguagemProgramacao(Interpreter):
         self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
       elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
+        #condição é escrita e depois dá reset, o corpo continua a armazenar as instruções interiores
         self.fHtml.write(child.value)
         self.dicinstrucoes['ciclicas'] += 1
         self.dicinstrucoes['total'] += 1
@@ -415,6 +420,7 @@ class LinguagemProgramacao(Interpreter):
           self.visit(child)
           self.nivelIf = nivelIf
           self.nivelProfundidade = nivelProfundidade
+    #Se a condição e o corpo não forem vazios são escritos e levam reset
     self.fHtml.write('\n')
     self.fHtml.write(numTabs)
     self.fHtml.write('\t</p>\n')
