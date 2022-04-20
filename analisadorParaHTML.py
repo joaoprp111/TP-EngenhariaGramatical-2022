@@ -253,7 +253,7 @@ class LinguagemProgramacao(Interpreter):
     # self.dicinstrucoes['condicionais'] = 0
     # self.dicinstrucoes['ciclicas'] = 0
     self.condicoesIfs = []
-    self.ifConsecutivo = False
+    self.ifConsecutivo = True
     self.niveisIfs = {}
     self.nivelIf = -1
     self.nivelProfundidade = 0
@@ -280,6 +280,7 @@ class LinguagemProgramacao(Interpreter):
     self.output['utilizadas'] = self.utilizadas
     self.output['instrucoes'] = self.dicinstrucoes
     self.output['totalSituacoesAn'] = self.totalSituacoesAn
+    self.output['condicoesIf'] = self.condicoesIfs
     return self.output
 
   def declaracoes(self, tree):
@@ -352,10 +353,7 @@ class LinguagemProgramacao(Interpreter):
     numTabs = nivelProfundidade * '\t'
     self.fHtml.write(numTabs)
     self.fHtml.write('\t<p class="code">\n\t')
-    for child in tree.children:
-      if isinstance(child, Token) and (child.type == 'IF' or child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT') and self.nivelProfundidade > 0:
-        self.totalSituacoesAn += 1
-        
+    for child in tree.children:  
       if isinstance(child,Token) and child.type == 'CE':
         #O \n é necessário porque a seguir a este token chegam instruções aninhadas
         self.fHtml.write(child.value)
@@ -366,19 +364,42 @@ class LinguagemProgramacao(Interpreter):
         self.dicinstrucoes['total'] += 1
         self.nivelIf = 0
         nivelIf = self.nivelIf
-        self.ifConsecutivo = True
         self.niveisIfs.setdefault(nivelIf, list())
-        #self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
+        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
+        #Verificar se a próxima instrução também é um if, se não for deixamos de juntar as condições
+        if len(tree.children[5].children) > 0:
+          condicaoIfAtual = self.visit(tree.children[2])[0]
+          proxInstrucao = str(tree.children[5].children[0].children[0])
+          if proxInstrucao != 'if':
+            self.condicoesIfs.append(condicaoIfAtual)
+            print(self.condicoesIfs)
+            self.condicoesIfs = []
+          else:
+            self.condicoesIfs.append(condicaoIfAtual)
       elif isinstance(child, Token) and child.type == 'IF':
+        self.totalSituacoesAn += 1
         self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
+        self.ifConsecutivo = True
         self.niveisIfs.setdefault(nivelIf, list())
-        #self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
+        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
+        #Verificar se a próxima instrução também é um if, se não for deixamos de juntar as condições
+        if len(tree.children[5].children) > 0:
+          condicaoIfAtual = self.visit(tree.children[2])[0]
+          proxInstrucao = str(tree.children[5].children[0].children[0])
+          if proxInstrucao != 'if':
+            self.condicoesIfs.append(condicaoIfAtual)
+            print(self.condicoesIfs)
+            self.condicoesIfs = []
+          else:
+            self.condicoesIfs.append(condicaoIfAtual)
       elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
         #condição é escrita e depois dá reset, o corpo continua a armazenar as instruções interiores
+        if self.nivelProfundidade > 0:
+          self.totalSituacoesAn += 1
         self.fHtml.write(child.value)
         self.dicinstrucoes['ciclicas'] += 1
         self.dicinstrucoes['total'] += 1
@@ -406,7 +427,7 @@ class LinguagemProgramacao(Interpreter):
         elif child.data == 'logic':
           self.visit(child)
         elif child.data == 'condicao':
-          self.visit(child)[0]
+          self.visit(child)
         elif child.data == 'instrucoes' and self.instrucaoAtual == "ciclo":
           self.nivelProfundidade += 1
           self.nivelIf = 0

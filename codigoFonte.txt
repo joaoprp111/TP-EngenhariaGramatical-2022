@@ -4,6 +4,11 @@ string str = "d";
 print(str);
 if (True){
     if(a > b){
-        input(d);
+        if(c){
+            input(d);
+        }
+    }
+    if(d){
+        print("2");
     }
 }
