@@ -253,6 +253,7 @@ class LinguagemProgramacao(Interpreter):
     # self.dicinstrucoes['condicionais'] = 0
     # self.dicinstrucoes['ciclicas'] = 0
     self.condicoesIfs = []
+    self.alternativasIfs = []
     self.ifConsecutivo = True
     self.niveisIfs = {}
     self.nivelIf = -1
@@ -281,6 +282,7 @@ class LinguagemProgramacao(Interpreter):
     self.output['instrucoes'] = self.dicinstrucoes
     self.output['totalSituacoesAn'] = self.totalSituacoesAn
     self.output['condicoesIf'] = self.condicoesIfs
+    self.output['alternativasIfs'] = self.alternativasIfs
     return self.output
 
   def declaracoes(self, tree):
@@ -344,12 +346,16 @@ class LinguagemProgramacao(Interpreter):
 
   def instrucoes(self, tree):
     # print('Entrei nas instruções...')
-    self.visit_children(tree)
+    r = self.visit_children(tree)
+    return r
 
   def instrucao(self, tree):
     # print('Entrei numa instrução...')
     nivelIf = self.nivelIf
     nivelProfundidade = self.nivelProfundidade
+    condicoesParaAninhar = []
+    corpo = ''
+    resultado = ''
     numTabs = nivelProfundidade * '\t'
     self.fHtml.write(numTabs)
     self.fHtml.write('\t<p class="code">\n\t')
@@ -358,6 +364,7 @@ class LinguagemProgramacao(Interpreter):
         #O \n é necessário porque a seguir a este token chegam instruções aninhadas
         self.fHtml.write(child.value)
         self.fHtml.write('\n')
+        resultado += '{\n' + numTabs
       elif isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
         self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
@@ -365,18 +372,26 @@ class LinguagemProgramacao(Interpreter):
         self.nivelIf = 0
         nivelIf = self.nivelIf
         self.niveisIfs.setdefault(nivelIf, list())
-        self.fHtml.write('<div class="info">\n' + child.value + '\t<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '\t</span></div>\n')
+        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
         #Verificar se a próxima instrução também é um if, se não for deixamos de juntar as condições
         if len(tree.children[5].children) > 0:
+          self.fHtml.write('(')
           condicaoIfAtual = self.visit(tree.children[2])[0]
+          self.fHtml.write(')')
           proxInstrucao = str(tree.children[5].children[0].children[0])
           if proxInstrucao != 'if':
             self.condicoesIfs.append(condicaoIfAtual)
-            print(self.condicoesIfs)
+            #print(self.condicoesIfs)
+            condicoesParaAninhar = self.condicoesIfs
             self.condicoesIfs = []
+            res = self.visit(tree.children[5])
+            corpo = res[0]
+            for r in res[1:]:
+              corpo += '\n' + r
           else:
             self.condicoesIfs.append(condicaoIfAtual)
+        resultado += child.value
       elif isinstance(child, Token) and child.type == 'IF':
         self.totalSituacoesAn += 1
         self.instrucaoAtual = "condicional"
@@ -384,18 +399,26 @@ class LinguagemProgramacao(Interpreter):
         self.dicinstrucoes['total'] += 1
         self.ifConsecutivo = True
         self.niveisIfs.setdefault(nivelIf, list())
-        self.fHtml.write('<div class="info">\n' + child.value + '\t<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '\t</span></div>\n')
+        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
         #Verificar se a próxima instrução também é um if, se não for deixamos de juntar as condições
         if len(tree.children[5].children) > 0:
+          self.fHtml.write('(')
           condicaoIfAtual = self.visit(tree.children[2])[0]
+          self.fHtml.write(')')
           proxInstrucao = str(tree.children[5].children[0].children[0])
           if proxInstrucao != 'if':
             self.condicoesIfs.append(condicaoIfAtual)
-            print(self.condicoesIfs)
+            condicoesParaAninhar = self.condicoesIfs
+            #print(self.condicoesIfs)
             self.condicoesIfs = []
+            res = self.visit(tree.children[5])
+            corpo = res[0]
+            for r in res[1:]:
+              corpo += '\n' + r
           else:
             self.condicoesIfs.append(condicaoIfAtual)
+        resultado += child.value
       elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
         #condição é escrita e depois dá reset, o corpo continua a armazenar as instruções interiores
         if self.nivelProfundidade > 0:
@@ -404,46 +427,62 @@ class LinguagemProgramacao(Interpreter):
         self.dicinstrucoes['ciclicas'] += 1
         self.dicinstrucoes['total'] += 1
         self.instrucaoAtual = "ciclo"
+        resultado += child.value
       elif isinstance(child, Token) and child.type == 'READ':
         self.fHtml.write(child.value)
         self.instrucaoAtual = "leitura"
         self.dicinstrucoes['leitura'] += 1
         self.dicinstrucoes['total'] += 1
+        resultado += child.value
       elif isinstance(child, Token) and child.type == 'PRINT':
         self.fHtml.write(child.value)
         self.instrucaoAtual = "escrita"
         self.dicinstrucoes['escrita'] += 1
         self.dicinstrucoes['total'] += 1
+        resultado += child.value
       elif isinstance(child,Token):
-        self.fHtml.write(child.value)
+        if self.instrucaoAtual != 'condicional':
+          self.fHtml.write(child.value)
+        resultado += child.value
       elif isinstance(child, Tree) and child.data == 'atribuicao':
         self.instrucaoAtual = "atribuicao"
         self.dicinstrucoes['atribuicoes'] += 1
         self.dicinstrucoes['total'] += 1
-        self.visit(child)
+        resultado += str(self.visit(child))
       elif isinstance(child, Tree):
         if child.data == 'conteudoread':
-          self.visit(child)
+          resultado += str(self.visit(child))
         elif child.data == 'logic':
-          self.visit(child)
-        elif child.data == 'condicao':
-          self.visit(child)
+          resultado += str(self.visit(child))
+        elif child.data == 'condicao' and self.instrucaoAtual != "condicional":
+          resultado += str(self.visit(child))
         elif child.data == 'instrucoes' and self.instrucaoAtual == "ciclo":
           self.nivelProfundidade += 1
           self.nivelIf = 0
-          self.visit(child)
+          resultado += str(self.visit(child))
           self.nivelIf = nivelIf
           self.nivelProfundidade = nivelProfundidade
         elif child.data == 'instrucoes' and self.instrucaoAtual == "condicional":
           self.nivelProfundidade += 1
           self.nivelIf += 1
-          self.visit(child)
+          resultado += str(self.visit(child))
           self.nivelIf = nivelIf
           self.nivelProfundidade = nivelProfundidade
-    #Se a condição e o corpo não forem vazios são escritos e levam reset
+
+    #Se a lista de condições tiver mais do que um elemento então podemos aninhar os ifs
+    if len(condicoesParaAninhar) > 1:
+      alternativaIf = 'if(' + condicoesParaAninhar[0]
+      for cond in condicoesParaAninhar[1:]:
+        alternativaIf += ' && ' + cond
+      alternativaIf += '){\n' + numTabs + '\t\t'
+      alternativaIf += corpo
+      alternativaIf += '\n' + numTabs + '}'
+      #print('ALTERNATIVA PARA O IF: ', alternativaIf)
+      self.alternativasIfs.append(alternativaIf)
     self.fHtml.write('\n')
     self.fHtml.write(numTabs)
     self.fHtml.write('\t</p>\n')
+    return resultado
     
   def condicao(self,tree):
     r = self.visit_children(tree)
@@ -451,35 +490,48 @@ class LinguagemProgramacao(Interpreter):
     #print('CONDICAO: ', r)
     
   def atribuicao(self,tree):
+    res = ''
     for child in tree.children:
       if (isinstance(child,Token) and child.type == 'VAR') and child.value in self.naoInicializadas:
         self.fHtml.write(child.value)
         self.naoInicializadas.remove(child.value)
+        res += child.value
       elif (isinstance(child,Token) and child.type == 'VAR') and child.value not in self.decls.keys():
-        self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não declarada</span>\n\t</div>\n')
+        self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+        res += '<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>'
       elif (isinstance(child,Token) and child.type == 'VAR'):
         self.fHtml.write(child.value)
+        res += child.value
       elif isinstance(child,Token):
         self.fHtml.write(child.value)
+        res += str(child.value)
       elif isinstance(child,Tree) and child.data == 'chave':
         chave = self.visit(child)
         self.fHtml.write(str(chave))
+        res += str(chave)
       elif isinstance(child,Tree):
-        self.visit(child)
+        res += str(self.visit(child))
+    return res
   
   def conteudoread(self,tree):
+    res = ''
     for child in tree.children:
       if isinstance(child,Token) and child.type == 'VAR' and child.value in self.naoInicializadas:
         self.fHtml.write(child.value)
         self.naoInicializadas.remove(child.value)
         self.utilizadas.add(child.value)
+        res += child.value
       elif isinstance(child,Token) and child.type == 'VAR' and child.value not in self.decls.keys():
-        self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não declarada</span>\n\t</div>\n')
+        self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+        res += '<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>'
       elif isinstance(child,Token):
         self.fHtml.write(child.value)
+        res += str(child.value)
       elif isinstance(child,Tree) and child.data == 'chave':
         chave = str(self.visit(child))
         self.fHtml.write(chave)
+        res += chave
+    return res
 
   def tipo(self, tree):
     return str(tree.children[0])
@@ -570,10 +622,10 @@ class LinguagemProgramacao(Interpreter):
         self.utilizadas.add(child.value)
         chave = self.visit(tree.children[2])
         if self.nasInstrucoes and child.value not in self.decls.keys():
-          self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não declarada</span>\n\t</div>\n' + '[' + str(chave) + ']')
+          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span>\</div>' + '[' + str(chave) + ']')
           self.erros['1: Não-declaração'].add(child.value)
         elif self.nasInstrucoes and child.value in self.naoInicializadas:
-          self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não inicializada</span>\n\t</div>\n' + '[' + str(chave) + ']')
+          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não inicializada</span></div>' + '[' + str(chave) + ']')
           self.erros['3: Usado mas não inicializado'].add(child.value)
         elif self.nasInstrucoes:
           self.fHtml.write(child.value)
@@ -581,10 +633,10 @@ class LinguagemProgramacao(Interpreter):
         return str(child.value) + '[' + str(chave) + ']'
       elif isinstance(child, Token) and child.type == 'VAR':
         if self.nasInstrucoes and child.value not in self.decls.keys():
-          self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não declarada</span>\n\t</div>\n')
+          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
           self.erros['1: Não-declaração'].add(child.value)
         elif self.nasInstrucoes and child.value in self.naoInicializadas:
-          self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não inicializada</span>\n\t</div>\n')
+          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não inicializada</span></div>')
           self.erros['3: Usado mas não inicializado'].add(child.value)
         elif self.nasInstrucoes:
           self.fHtml.write(child.value)

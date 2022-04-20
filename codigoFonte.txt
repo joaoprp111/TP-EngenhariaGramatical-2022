@@ -9,6 +9,12 @@ if (True){
         }
     }
     if(d){
-        print("2");
+        if(e){
+            print("2");
+            x = x + 2;
+            while(x){
+                print("x");
+            }
+        }
     }
 }
