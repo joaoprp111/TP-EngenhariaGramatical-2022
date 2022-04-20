@@ -1,15 +1,9 @@
 list l = [1,2,3];
-
+string str = "s";
+string str = "d";
 print(str);
 if (True){
-    print(l[2]);
     if(a > b){
         input(d);
-    }
-    while(i < 10){
-        if(l[0] > 0){
-            l[2] = 56;
-        }
-        print(s);
     }
 }

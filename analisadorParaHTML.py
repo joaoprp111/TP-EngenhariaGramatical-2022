@@ -252,6 +252,8 @@ class LinguagemProgramacao(Interpreter):
     # self.dicinstrucoes['escrita'] = 0
     # self.dicinstrucoes['condicionais'] = 0
     # self.dicinstrucoes['ciclicas'] = 0
+    self.condicoesIfs = []
+    self.ifConsecutivo = False
     self.niveisIfs = {}
     self.nivelIf = -1
     self.nivelProfundidade = 0
@@ -359,24 +361,21 @@ class LinguagemProgramacao(Interpreter):
         self.fHtml.write(child.value)
         self.fHtml.write('\n')
       elif isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
-        #adiciona a condição ao armazenamento das condições
-        #se a condição for vazia o corpo é escrito e dá reset
         self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
         self.nivelIf = 0
         nivelIf = self.nivelIf
+        self.ifConsecutivo = True
         self.niveisIfs.setdefault(nivelIf, list())
-        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
+        #self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
       elif isinstance(child, Token) and child.type == 'IF':
-        #adiciona a condição ao armazenamento das condições
-        #se a condição for vazia o corpo é escrito e dá reset
         self.instrucaoAtual = "condicional"
         self.dicinstrucoes['condicionais'] += 1
         self.dicinstrucoes['total'] += 1
         self.niveisIfs.setdefault(nivelIf, list())
-        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
+        #self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
       elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
         #condição é escrita e depois dá reset, o corpo continua a armazenar as instruções interiores
@@ -407,7 +406,7 @@ class LinguagemProgramacao(Interpreter):
         elif child.data == 'logic':
           self.visit(child)
         elif child.data == 'condicao':
-          self.visit(child)
+          self.visit(child)[0]
         elif child.data == 'instrucoes' and self.instrucaoAtual == "ciclo":
           self.nivelProfundidade += 1
           self.nivelIf = 0
@@ -426,7 +425,8 @@ class LinguagemProgramacao(Interpreter):
     self.fHtml.write('\t</p>\n')
     
   def condicao(self,tree):
-    r = self.visit(tree.children[0])
+    r = self.visit_children(tree)
+    return r
     #print('CONDICAO: ', r)
     
   def atribuicao(self,tree):
@@ -464,58 +464,83 @@ class LinguagemProgramacao(Interpreter):
     return str(tree.children[0])
 
   def logic(self,tree):
-    res = None
+    res = ''
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
+        res += str(child.value)
       elif isinstance(child,Tree) and child.data == 'logicnot':
-        res = self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
       elif isinstance(child,Tree):
-        self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
     return res
 
   def logicnot(self,tree):
-    res = None
+    res = ''
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
+        res += str(child.value)
       elif isinstance(child,Tree) and child.data == 'relac':
-        res = self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
       elif isinstance(child,Tree):
-        self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
     return res
 
   def relac(self,tree):
-    res = None
+    res = ''
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
+        res += str(child.value)
       elif isinstance(child,Tree) and child.data == 'exp':
-        res = self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
       elif isinstance(child,Tree):
-        self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
     return res
 
   def exp(self,tree):
-    res = None
+    res = ''
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
+        res += str(child.value)
       elif isinstance(child,Tree) and child.data == 'termo':
-        res = self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
       elif isinstance(child,Tree):
-        self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
     return res
 
   def termo(self,tree):
-    res = None
+    res = ''
     for child in tree.children:
       if isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
+        res += str(child.value)
       elif isinstance(child,Tree) and child.data == 'factor':
-        res = self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
       elif isinstance(child,Tree):
-        self.visit(child)
+        visit = self.visit(child)
+        if visit != None:
+          res += str(visit)
     return res
 
   def factor(self, tree):
