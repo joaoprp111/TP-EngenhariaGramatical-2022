@@ -365,7 +365,7 @@ class LinguagemProgramacao(Interpreter):
         self.nivelIf = 0
         nivelIf = self.nivelIf
         self.niveisIfs.setdefault(nivelIf, list())
-        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
+        self.fHtml.write('<div class="info">\n' + child.value + '\t<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '\t</span></div>\n')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
         #Verificar se a próxima instrução também é um if, se não for deixamos de juntar as condições
         if len(tree.children[5].children) > 0:
@@ -384,7 +384,7 @@ class LinguagemProgramacao(Interpreter):
         self.dicinstrucoes['total'] += 1
         self.ifConsecutivo = True
         self.niveisIfs.setdefault(nivelIf, list())
-        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
+        self.fHtml.write('<div class="info">\n' + child.value + '\t<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '\t</span></div>\n')
         self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
         #Verificar se a próxima instrução também é um if, se não for deixamos de juntar as condições
         if len(tree.children[5].children) > 0:
@@ -456,7 +456,7 @@ class LinguagemProgramacao(Interpreter):
         self.fHtml.write(child.value)
         self.naoInicializadas.remove(child.value)
       elif (isinstance(child,Token) and child.type == 'VAR') and child.value not in self.decls.keys():
-        self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+        self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não declarada</span>\n\t</div>\n')
       elif (isinstance(child,Token) and child.type == 'VAR'):
         self.fHtml.write(child.value)
       elif isinstance(child,Token):
@@ -474,7 +474,7 @@ class LinguagemProgramacao(Interpreter):
         self.naoInicializadas.remove(child.value)
         self.utilizadas.add(child.value)
       elif isinstance(child,Token) and child.type == 'VAR' and child.value not in self.decls.keys():
-        self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+        self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não declarada</span>\n\t</div>\n')
       elif isinstance(child,Token):
         self.fHtml.write(child.value)
       elif isinstance(child,Tree) and child.data == 'chave':
@@ -570,10 +570,10 @@ class LinguagemProgramacao(Interpreter):
         self.utilizadas.add(child.value)
         chave = self.visit(tree.children[2])
         if self.nasInstrucoes and child.value not in self.decls.keys():
-          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>' + '[' + str(chave) + ']')
+          self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não declarada</span>\n\t</div>\n' + '[' + str(chave) + ']')
           self.erros['1: Não-declaração'].add(child.value)
         elif self.nasInstrucoes and child.value in self.naoInicializadas:
-          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não inicializada</span></div>' + '[' + str(chave) + ']')
+          self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não inicializada</span>\n\t</div>\n' + '[' + str(chave) + ']')
           self.erros['3: Usado mas não inicializado'].add(child.value)
         elif self.nasInstrucoes:
           self.fHtml.write(child.value)
@@ -581,10 +581,10 @@ class LinguagemProgramacao(Interpreter):
         return str(child.value) + '[' + str(chave) + ']'
       elif isinstance(child, Token) and child.type == 'VAR':
         if self.nasInstrucoes and child.value not in self.decls.keys():
-          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
+          self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não declarada</span>\n\t</div>\n')
           self.erros['1: Não-declaração'].add(child.value)
         elif self.nasInstrucoes and child.value in self.naoInicializadas:
-          self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não inicializada</span></div>')
+          self.fHtml.write('<div class="error">\n' + child.value + '\t<span class="errortext">Variável não inicializada</span>\n\t</div>\n')
           self.erros['3: Usado mas não inicializado'].add(child.value)
         elif self.nasInstrucoes:
           self.fHtml.write(child.value)
