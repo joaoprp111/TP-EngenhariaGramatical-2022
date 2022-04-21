@@ -209,12 +209,14 @@ def preencherInicio(ficheiro):
   </style>
   <body>
     <h2>Análise de código</h2>
-    <pre><code>'''
+    <pre>
+        <code>'''
   ficheiro.write(conteudo + '\n')
   
 def preencherFim(ficheiro):
   conteudo = '''
-    </code></pre>
+      </code>
+    </pre>
   </body>
 </html>'''
   ficheiro.write(conteudo)
@@ -254,7 +256,9 @@ class LinguagemProgramacao(Interpreter):
   def linguagem(self, tree):
     self.visit(tree.children[0]) #Declarações
     self.nasInstrucoes = True
+    self.fHtml.write(' '*10 + '<div class="instrucoes">\n')
     self.visit(tree.children[1]) #Instruções
+    self.fHtml.write(' '*10 + '</div>\n')
     preencherFim(self.fHtml)
     self.fHtml.close()
     #Verificar as variáveis declaradas mas nunca mencionadas
@@ -274,13 +278,13 @@ class LinguagemProgramacao(Interpreter):
 
   def declaracoes(self, tree):
     #Visita todas as declarações e cada uma processa a sua parte
+    self.fHtml.write(' '*10 + '<div class="declaracoes">\n')
     for decl in tree.children:
       if isinstance(decl, Tree):
         self.visit(decl)
+    self.fHtml.write(' '*10 + '</div>\n')
 
   def declaracao(self, tree):
-    #Declaração será contida num parágrafo html
-    self.fHtml.write('\t<p class="code">\n')
     self.fHtml.write('\t')
     #Inicialização de variáveis
     var = None
@@ -329,7 +333,6 @@ class LinguagemProgramacao(Interpreter):
       self.fHtml.write(';\n')
       
     self.decls[var] = tipo
-    self.fHtml.write('\t</p>\n')
 
   def instrucoes(self, tree):
     r = self.visit_children(tree)
@@ -339,13 +342,12 @@ class LinguagemProgramacao(Interpreter):
     instrucaoAtual = self.instrucaoAtual
     nivelIf = self.nivelIf
     nivelProfundidade = self.nivelProfundidade
+    numTabs = (nivelProfundidade * '\t') + '\t'
+    self.fHtml.write(numTabs)
     condicoesParaAninhar = []
     corpo = ''
     sairDoCiclo = False
     resultado = ''
-    numTabs = nivelProfundidade * '\t'
-    self.fHtml.write(numTabs)
-    self.fHtml.write('\t<p class="code">\n\t')
     for child in tree.children:
         if not sairDoCiclo: 
             if isinstance(child,Token) and child.type == 'IF':
@@ -377,6 +379,7 @@ class LinguagemProgramacao(Interpreter):
                         res = self.visit(tree.children[5])
                         self.nivelIf = nivelIf
                         self.nivelProfundidade = nivelProfundidade
+                        numTabs = (self.nivelProfundidade * '\t') + '\t'
                         self.fHtml.write(numTabs + '}')
                         corpo = res[0]
                         for r in res[1:]:
@@ -388,7 +391,8 @@ class LinguagemProgramacao(Interpreter):
                             resElse = self.visit(tree.children[9])
                             self.nivelIf = nivelIf
                             self.nivelProfundidade = nivelProfundidade
-                            self.fHtml.write('}')
+                            numTabs = (self.nivelProfundidade * '\t') + '\t'
+                            self.fHtml.write(numTabs + '}')
                             resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}else{\n' + str(resElse) + '}'
                         else:               
                             resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}'
@@ -399,7 +403,8 @@ class LinguagemProgramacao(Interpreter):
                         res = self.visit(tree.children[5])
                         self.nivelIf = nivelIf
                         self.nivelProfundidade = nivelProfundidade
-                        self.fHtml.write('}')
+                        numTabs = (self.nivelProfundidade * '\t') + '\t'
+                        self.fHtml.write(numTabs + '}')
                         corpo = res[0]
                         for r in res[1:]:
                             corpo += '\n' + r
@@ -410,6 +415,7 @@ class LinguagemProgramacao(Interpreter):
                             resElse = self.visit(tree.children[9])
                             self.nivelIf = nivelIf
                             self.nivelProfundidade = nivelProfundidade
+                            numTabs = (self.nivelProfundidade * '\t') + '\t'
                             self.fHtml.write(numTabs + '}')
                             resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}else{\n' + str(resElse) + '}'
                         else:               
@@ -466,7 +472,6 @@ class LinguagemProgramacao(Interpreter):
                     self.nivelProfundidade = nivelProfundidade
 
     #Se a lista de condições tiver mais do que um elemento então podemos aninhar os ifs
-    print(condicoesParaAninhar)
     if len(condicoesParaAninhar) > 1:
       alternativaIf = 'if(' + condicoesParaAninhar[0]
       for cond in condicoesParaAninhar[1:]:
@@ -477,8 +482,6 @@ class LinguagemProgramacao(Interpreter):
       #print('ALTERNATIVA PARA O IF: ', alternativaIf)
       self.alternativasIfs.append(alternativaIf)
     self.fHtml.write('\n')
-    self.fHtml.write(numTabs)
-    self.fHtml.write('\t</p>\n')
     return resultado
     
   def condicao(self,tree):
