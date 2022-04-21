@@ -129,6 +129,10 @@ def preencherInicio(ficheiro):
   conteudo = '''
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Análise Estática</title>
+  </head>
   <style>
     .info {
       position: relative;
@@ -220,11 +224,39 @@ def preencherFim(ficheiro):
   </body>
 </html>'''
   ficheiro.write(conteudo)
+  
+def criarSegundaPagina(dicionario,ficheiro):
+  inicio = '''
+  <!DOCTYPE html>
+  <html lang="pt">
+  <head>
+    <link rel="stylesheet" href="w3.css">
+    <meta charset="UTF-8">
+    <title>Informações</title>
+  </head>
+  <body>
+  '''
+  
+  #Variáveis e os tipos
+  ficheiro.write(inicio)
+  ficheiro.write('\t<h1>Resultados da análise do código</h1>\n')
+  ficheiro.write('\t<h2>Variáveis declaradas e os seus tipos</h2>\n')
+  ficheiro.write('\t<table class="w3-table-all">\n\t\t<tr>\n')
+  ficheiro.write('\t\t\t<th>Variável</th>\n')
+  ficheiro.write('\t\t\t<th>Tipo</th>\n')
+  ficheiro.write('\t\t</tr>\n')
+  for k,v in dicionario['decls'].items():
+    ficheiro.write('\t\t<tr>\n')
+    ficheiro.write('\t\t\t<td>' + k + '</td>\n')
+    ficheiro.write('\t\t\t<td>' + v + '</td>\n')
+    
+  
 
 class LinguagemProgramacao(Interpreter):
 
   def __init__(self):
-    self.fHtml = criarFicheiroHtml('outputHtml.html')
+    self.fHtml = criarFicheiroHtml('codigoAnotado.html')
+    self.f2Html = criarFicheiroHtml('informacoesAdicionais.html')
     preencherInicio(self.fHtml)
     self.decls = {}
     self.naoInicializadas = set()
@@ -274,6 +306,8 @@ class LinguagemProgramacao(Interpreter):
     self.output['totalSituacoesAn'] = self.totalSituacoesAn
     self.output['condicoesIf'] = self.condicoesIfs
     self.output['alternativasIfs'] = self.alternativasIfs
+    #Preencher a segunda página com informações adicionais
+    criarSegundaPagina(self.output, self.f2Html)
     return self.output
 
   def declaracoes(self, tree):
