@@ -2,19 +2,17 @@ list l = [1,2,3];
 string str = "s";
 string str = "d";
 print(str);
-if (True){
-    if(a > b){
+if (a){
+    if(b){
         if(c){
-            input(d);
+            print("1");
         }
     }
-    if(d){
-        if(e){
-            print("2");
-            x = x + 2;
-            while(x){
-                print("x");
-            }
-        }
+}
+if(str){
+    while(str > "1"){
+        print("t");
+        input(c);
+        c = c*2;
     }
 }

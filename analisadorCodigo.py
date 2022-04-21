@@ -225,7 +225,6 @@ class LinguagemProgramacao(Interpreter):
     self.fHtml = criarFicheiroHtml('outputHtml.html')
     preencherInicio(self.fHtml)
     self.decls = {}
-    #print(2)
     self.naoInicializadas = set()
     self.utilizadas = set()
     self.erros = {
@@ -234,10 +233,6 @@ class LinguagemProgramacao(Interpreter):
       '3: Usado mas não inicializado' : set(),
       '4: Declarado mas nunca mencionado' : set() 
     }
-    # self.erros['1: Não-declaração'] = set()
-    # self.erros['2: Redeclaração'] = set()
-    # self.erros['3: Usado mas não inicializado'] = set()
-    # self.erros['4: Declarado mas nunca mencionado'] = set()
     self.dicinstrucoes = {
       'total' : 0,
       'atribuicoes' : 0,
@@ -246,28 +241,20 @@ class LinguagemProgramacao(Interpreter):
       'condicionais' :0,
       'ciclicas' : 0
     }
-    # self.dicinstrucoes['total'] = 0
-    # self.dicinstrucoes['atribuicoes'] = 0
-    # self.dicinstrucoes['leitura'] = 0
-    # self.dicinstrucoes['escrita'] = 0
-    # self.dicinstrucoes['condicionais'] = 0
-    # self.dicinstrucoes['ciclicas'] = 0
     self.condicoesIfs = []
     self.alternativasIfs = []
-    self.ifConsecutivo = True
     self.niveisIfs = {}
     self.nivelIf = -1
     self.nivelProfundidade = 0
     self.totalSituacoesAn = 0
     self.nasInstrucoes = False
-    self.instrucaoAtual = ""
+    self.instrucaoAtual = ''
     self.output = {}
 
   def linguagem(self, tree):
-    # print('A visitar todos os filhos da linguagem...')
-    self.visit(tree.children[0])
+    self.visit(tree.children[0]) #Declarações
     self.nasInstrucoes = True
-    self.visit(tree.children[1])
+    self.visit(tree.children[1]) #Instruções
     preencherFim(self.fHtml)
     self.fHtml.close()
     #Verificar as variáveis declaradas mas nunca mencionadas
@@ -286,20 +273,20 @@ class LinguagemProgramacao(Interpreter):
     return self.output
 
   def declaracoes(self, tree):
-    # print('Entrei nas declarações...')
-    # print('A visitar todos os filhos da regra declarações...')
+    #Visita todas as declarações e cada uma processa a sua parte
     for decl in tree.children:
       if isinstance(decl, Tree):
         self.visit(decl)
 
   def declaracao(self, tree):
-    # print('Entrei numa declaração...')
-    #print(tree.children)
+    #Declaração será contida num parágrafo html
     self.fHtml.write('\t<p class="code">\n')
     self.fHtml.write('\t')
+    #Inicialização de variáveis
     var = None
     tipo = None
     valor = None
+    #É preciso percorrer cada filho e processar de acordo com as situações
     for child in tree.children:
       if isinstance(child, Token) and child.type == 'VAR' and child.value in self.decls.keys(): #Visita a variável declarada
         var = child.value
@@ -345,131 +332,141 @@ class LinguagemProgramacao(Interpreter):
     self.fHtml.write('\t</p>\n')
 
   def instrucoes(self, tree):
-    # print('Entrei nas instruções...')
     r = self.visit_children(tree)
     return r
 
   def instrucao(self, tree):
-    # print('Entrei numa instrução...')
+    instrucaoAtual = self.instrucaoAtual
     nivelIf = self.nivelIf
     nivelProfundidade = self.nivelProfundidade
     condicoesParaAninhar = []
     corpo = ''
+    sairDoCiclo = False
     resultado = ''
     numTabs = nivelProfundidade * '\t'
     self.fHtml.write(numTabs)
     self.fHtml.write('\t<p class="code">\n\t')
-    for child in tree.children:  
-      if isinstance(child,Token) and child.type == 'CE':
-        #O \n é necessário porque a seguir a este token chegam instruções aninhadas
-        self.fHtml.write(child.value)
-        self.fHtml.write('\n')
-        resultado += '{\n' + numTabs
-      elif isinstance(child, Token) and child.type == 'IF' and self.nivelIf == -1: #Deteção do primeiro if
-        self.instrucaoAtual = "condicional"
-        self.dicinstrucoes['condicionais'] += 1
-        self.dicinstrucoes['total'] += 1
-        self.nivelIf = 0
-        nivelIf = self.nivelIf
-        self.niveisIfs.setdefault(nivelIf, list())
-        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
-        self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
-        #Verificar se a próxima instrução também é um if, se não for deixamos de juntar as condições
-        if len(tree.children[5].children) > 0:
-          self.fHtml.write('(')
-          condicaoIfAtual = self.visit(tree.children[2])[0]
-          self.fHtml.write(')')
-          proxInstrucao = str(tree.children[5].children[0].children[0])
-          if proxInstrucao != 'if':
-            self.condicoesIfs.append(condicaoIfAtual)
-            #print(self.condicoesIfs)
-            condicoesParaAninhar = self.condicoesIfs
-            self.condicoesIfs = []
-            res = self.visit(tree.children[5])
-            corpo = res[0]
-            for r in res[1:]:
-              corpo += '\n' + r
-          else:
-            self.condicoesIfs.append(condicaoIfAtual)
-        resultado += child.value
-      elif isinstance(child, Token) and child.type == 'IF':
-        self.totalSituacoesAn += 1
-        self.instrucaoAtual = "condicional"
-        self.dicinstrucoes['condicionais'] += 1
-        self.dicinstrucoes['total'] += 1
-        self.ifConsecutivo = True
-        self.niveisIfs.setdefault(nivelIf, list())
-        self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
-        self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
-        #Verificar se a próxima instrução também é um if, se não for deixamos de juntar as condições
-        if len(tree.children[5].children) > 0:
-          self.fHtml.write('(')
-          condicaoIfAtual = self.visit(tree.children[2])[0]
-          self.fHtml.write(')')
-          proxInstrucao = str(tree.children[5].children[0].children[0])
-          if proxInstrucao != 'if':
-            self.condicoesIfs.append(condicaoIfAtual)
-            condicoesParaAninhar = self.condicoesIfs
-            #print(self.condicoesIfs)
-            self.condicoesIfs = []
-            res = self.visit(tree.children[5])
-            corpo = res[0]
-            for r in res[1:]:
-              corpo += '\n' + r
-          else:
-            self.condicoesIfs.append(condicaoIfAtual)
-        resultado += child.value
-      elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
-        #condição é escrita e depois dá reset, o corpo continua a armazenar as instruções interiores
-        if self.nivelProfundidade > 0:
-          self.totalSituacoesAn += 1
-        self.fHtml.write(child.value)
-        self.dicinstrucoes['ciclicas'] += 1
-        self.dicinstrucoes['total'] += 1
-        self.instrucaoAtual = "ciclo"
-        resultado += child.value
-      elif isinstance(child, Token) and child.type == 'READ':
-        self.fHtml.write(child.value)
-        self.instrucaoAtual = "leitura"
-        self.dicinstrucoes['leitura'] += 1
-        self.dicinstrucoes['total'] += 1
-        resultado += child.value
-      elif isinstance(child, Token) and child.type == 'PRINT':
-        self.fHtml.write(child.value)
-        self.instrucaoAtual = "escrita"
-        self.dicinstrucoes['escrita'] += 1
-        self.dicinstrucoes['total'] += 1
-        resultado += child.value
-      elif isinstance(child,Token):
-        if self.instrucaoAtual != 'condicional':
-          self.fHtml.write(child.value)
-        resultado += child.value
-      elif isinstance(child, Tree) and child.data == 'atribuicao':
-        self.instrucaoAtual = "atribuicao"
-        self.dicinstrucoes['atribuicoes'] += 1
-        self.dicinstrucoes['total'] += 1
-        resultado += str(self.visit(child))
-      elif isinstance(child, Tree):
-        if child.data == 'conteudoread':
-          resultado += str(self.visit(child))
-        elif child.data == 'logic':
-          resultado += str(self.visit(child))
-        elif child.data == 'condicao' and self.instrucaoAtual != "condicional":
-          resultado += str(self.visit(child))
-        elif child.data == 'instrucoes' and self.instrucaoAtual == "ciclo":
-          self.nivelProfundidade += 1
-          self.nivelIf = 0
-          resultado += str(self.visit(child))
-          self.nivelIf = nivelIf
-          self.nivelProfundidade = nivelProfundidade
-        elif child.data == 'instrucoes' and self.instrucaoAtual == "condicional":
-          self.nivelProfundidade += 1
-          self.nivelIf += 1
-          resultado += str(self.visit(child))
-          self.nivelIf = nivelIf
-          self.nivelProfundidade = nivelProfundidade
+    for child in tree.children:
+        if not sairDoCiclo: 
+            if isinstance(child,Token) and child.type == 'IF':
+                self.instrucaoAtual = "condicional"
+                self.dicinstrucoes['condicionais'] += 1
+                self.dicinstrucoes['total'] += 1
+                
+                if self.nivelIf == -1: #Primeiro if do código
+                    nivelIf = self.nivelIf = 0
+                elif nivelProfundidade > 0:
+                    self.totalSituacoesAn += 1
+                
+                self.niveisIfs.setdefault(nivelIf, list())
+                self.niveisIfs[nivelIf].append(self.dicinstrucoes['condicionais'])
+                
+                self.fHtml.write('<div class="info">' + child.value + '<span class="infotext">Nível de aninhamento: ' + str(nivelIf) + '</span></div>')
+                self.fHtml.write('(')
+                condicaoIfAtual = self.visit(tree.children[2])[0]
+                self.fHtml.write('){\n')
+                if len(tree.children[5].children) > 0: #Se existirem instruções dentro do if
+                    existeElse = 'else' in tree.children[5].children[0].children
+                    proxInstrucao = str(tree.children[5].children[0].children[0])
+                    if proxInstrucao != 'if' or existeElse or len(tree.children[5].children) > 1:
+                        self.condicoesIfs.append(condicaoIfAtual)
+                        condicoesParaAninhar = self.condicoesIfs
+                        self.condicoesIfs = []
+                        self.nivelProfundidade += 1
+                        self.nivelIf += 1
+                        res = self.visit(tree.children[5])
+                        self.nivelIf = nivelIf
+                        self.nivelProfundidade = nivelProfundidade
+                        self.fHtml.write(numTabs + '}')
+                        corpo = res[0]
+                        for r in res[1:]:
+                            corpo += '\n' + r
+                        if 'else' in tree.children:
+                            self.fHtml.write('else{\n')
+                            self.nivelProfundidade += 1
+                            self.nivelIf += 1
+                            resElse = self.visit(tree.children[9])
+                            self.nivelIf = nivelIf
+                            self.nivelProfundidade = nivelProfundidade
+                            self.fHtml.write('}')
+                            resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}else{\n' + str(resElse) + '}'
+                        else:               
+                            resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}'
+                    else:
+                        self.condicoesIfs.append(condicaoIfAtual)
+                        self.nivelProfundidade += 1
+                        self.nivelIf += 1
+                        res = self.visit(tree.children[5])
+                        self.nivelIf = nivelIf
+                        self.nivelProfundidade = nivelProfundidade
+                        self.fHtml.write('}')
+                        corpo = res[0]
+                        for r in res[1:]:
+                            corpo += '\n' + r
+                        if 'else' in tree.children:
+                            self.fHtml.write('else{\n')
+                            self.nivelProfundidade += 1
+                            self.nivelIf += 1
+                            resElse = self.visit(tree.children[9])
+                            self.nivelIf = nivelIf
+                            self.nivelProfundidade = nivelProfundidade
+                            self.fHtml.write(numTabs + '}')
+                            resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}else{\n' + str(resElse) + '}'
+                        else:               
+                            resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}'
+                sairDoCiclo = True
+            elif isinstance(child,Token) and child.type == 'CE':
+                #O \n é necessário porque a seguir a este token chegam instruções aninhadas
+                self.fHtml.write(child.value)
+                self.fHtml.write('\n')
+                resultado += '{\n' + numTabs
+            elif isinstance(child,Token) and child.type == 'CD':
+                self.fHtml.write(numTabs + child.value)
+                resultado += numTabs + '}'
+            elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
+                if self.nivelProfundidade > 0:
+                    self.totalSituacoesAn += 1
+                self.fHtml.write(child.value)
+                self.dicinstrucoes['ciclicas'] += 1
+                self.dicinstrucoes['total'] += 1
+                self.instrucaoAtual = "ciclo"
+                resultado += child.value
+            elif isinstance(child, Token) and child.type == 'READ':
+                self.fHtml.write(child.value)
+                self.instrucaoAtual = "leitura"
+                self.dicinstrucoes['leitura'] += 1
+                self.dicinstrucoes['total'] += 1
+                resultado += child.value
+            elif isinstance(child, Token) and child.type == 'PRINT':
+                self.fHtml.write(child.value)
+                instrucaoAtual = self.instrucaoAtual = "escrita"
+                self.dicinstrucoes['escrita'] += 1
+                self.dicinstrucoes['total'] += 1
+                resultado += child.value
+            elif isinstance(child,Token): 
+                self.fHtml.write(child.value)
+                resultado += child.value
+            elif isinstance(child, Tree) and child.data == 'atribuicao':
+                instrucaoAtual = self.instrucaoAtual = "atribuicao"
+                self.dicinstrucoes['atribuicoes'] += 1
+                self.dicinstrucoes['total'] += 1
+                resultado += str(self.visit(child))
+            elif isinstance(child, Tree):
+                if child.data == 'conteudoread':
+                    resultado += str(self.visit(child))
+                elif child.data == 'logic':
+                    resultado += str(self.visit(child))
+                elif child.data == 'condicao':
+                    resultado += str(self.visit(child))
+                elif child.data == 'instrucoes':
+                    self.nivelProfundidade += 1
+                    self.nivelIf = 0
+                    resultado += str(self.visit(child))
+                    self.nivelIf = nivelIf
+                    self.nivelProfundidade = nivelProfundidade
 
     #Se a lista de condições tiver mais do que um elemento então podemos aninhar os ifs
+    print(condicoesParaAninhar)
     if len(condicoesParaAninhar) > 1:
       alternativaIf = 'if(' + condicoesParaAninhar[0]
       for cond in condicoesParaAninhar[1:]:
