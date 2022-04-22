@@ -234,12 +234,11 @@ def criarSegundaPagina(dicionario,ficheiro):
     <meta charset="UTF-8">
     <title>Informações</title>
   </head>
-  <body>
+  <body class="w3-container">
   '''
   
   #Variáveis e os tipos
   ficheiro.write(inicio)
-  ficheiro.write('\t<h1>Resultados da análise do código</h1>\n')
   ficheiro.write('\t<h2>Variáveis declaradas e os seus tipos</h2>\n')
   ficheiro.write('\t<table class="w3-table-all">\n\t\t<tr>\n')
   ficheiro.write('\t\t\t<th>Variável</th>\n')
@@ -249,6 +248,68 @@ def criarSegundaPagina(dicionario,ficheiro):
     ficheiro.write('\t\t<tr>\n')
     ficheiro.write('\t\t\t<td>' + k + '</td>\n')
     ficheiro.write('\t\t\t<td>' + v + '</td>\n')
+    ficheiro.write('\t\t</tr>\n')
+  ficheiro.write('\t</table>\n')
+  
+  ficheiro.write('\t<h2>Outras informações sobre as variáveis</h2>\n')
+  ficheiro.write('\t<ul class="w3-ul">\n')
+  
+  naoInicializadas = dicionario['naoInicializadas']
+  if len(naoInicializadas) > 0:
+    ficheiro.write('\t\t<li><b>Variáveis sem inicialização: </b>' + str(naoInicializadas) + '</li>\n')
+  else:
+    ficheiro.write('\t\t<li><b>Variáveis sem inicialização: </b>Nenhuma</li>\n')
+    
+  naoDeclaradas = dicionario['erros']['1: Não-declaração']
+  if len(naoDeclaradas) > 0:
+    ficheiro.write('\t\t<li><b>Variáveis não declaradas: </b>' + str(naoDeclaradas) + '</li>\n')
+  else:
+    ficheiro.write('\t\t<li><b>Variáveis não declaradas: </b>Nenhuma</li>\n')
+    
+  redeclaradas = dicionario['erros']['2: Redeclaração']
+  if len(redeclaradas) > 0:
+    ficheiro.write('\t\t<li><b>Variáveis redeclaradas: </b>' + str(redeclaradas) + '</li>\n')
+  else:
+    ficheiro.write('\t\t<li><b>Variáveis redeclaradas: </b>Nenhuma</li>\n')
+    
+  usadasNaoInicializadas = dicionario['erros']['3: Usado mas não inicializado']
+  if len(usadasNaoInicializadas) > 0:
+    ficheiro.write('\t\t<li><b>Variáveis usadas e não inicializadas: </b>' + str(usadasNaoInicializadas) + '</li>\n')
+  else:
+    ficheiro.write('\t\t<li><b>Variáveis usadas e não inicializadas: </b>Nenhuma</li>\n')
+    
+  nuncaMencionadas = dicionario['erros']['4: Declarado mas nunca mencionado']
+  if len(nuncaMencionadas) > 0:
+    ficheiro.write('\t\t<li><b>Variáveis declaradas mas nunca mencionadas: </b>' + str(nuncaMencionadas) + '</li>\n')
+  else:
+    ficheiro.write('\t\t<li><b>Variáveis declaradas mas nunca mencionadas: </b>Nenhuma</li>\n')
+  ficheiro.write('\t</ul>\n')
+    
+  ficheiro.write('\t<h2>Informações sobre as instruções</h2>\n')
+  ficheiro.write('\t<ul class="w3-ul">\n')
+  ficheiro.write('\t\t<li><b>Total de instruções: </b>' + str(dicionario['instrucoes']['total']) + '</li>\n')
+  ficheiro.write('\t\t<li><b>Total de atribuições: </b>' + str(dicionario['instrucoes']['atribuicoes']) + '</li>\n')
+  ficheiro.write('\t\t<li><b>Total de leituras: </b>' + str(dicionario['instrucoes']['leitura']) + '</li>\n')
+  ficheiro.write('\t\t<li><b>Total de escritas: </b>' + str(dicionario['instrucoes']['escrita']) + '</li>\n')
+  ficheiro.write('\t\t<li><b>Total de instruções condicionais: </b>' + str(dicionario['instrucoes']['condicionais']) + '</li>\n')
+  ficheiro.write('\t\t<li><b>Total de instruções cíclicas: </b>' + str(dicionario['instrucoes']['ciclicas']) + '</li>\n')
+  ficheiro.write('\t\t<li><b>Total de situações de aninhamento: </b>' + str(dicionario['totalSituacoesAn']) + '</li>\n')
+  ficheiro.write('\t</ul>\n')
+  
+  ficheiro.write('\t<h2>Informações sobre os ifs e os seus aninhamentos</h2>\n')
+  ficheiro.write('\t<h4>Níveis de aninhamento dos ifs</h4>\n')
+  ficheiro.write('\t<ul class="w3-ul">\n')
+  niveis = dicionario['niveisIf']
+  for k, v in niveis.items():
+    ficheiro.write('\t\t<li><b>Nível ' + str(k) + ': </b>Ifs pela ordem em que aparecem no código - ' + str(v) + '</li>\n')
+  ficheiro.write('\t</ul>\n')
+  
+  alternativas = dicionario['alternativasIfs']
+  if len(alternativas) > 0:
+    ficheiro.write('\t<h4>Alternativa para os ifs aninhados</h4>\n')
+    for a in alternativas:
+      ficheiro.write('\t<p>' + a + '</p>\n')
+  
     
   
 
@@ -348,7 +409,8 @@ class LinguagemProgramacao(Interpreter):
             infoEstrutura = valor.split('[')
             variavel = infoEstrutura[0]
             if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro
-              self.erros['1: Não-declaração'].add(variavel)
+              if variavel != '':
+                self.erros['1: Não-declaração'].add(variavel)
               self.fHtml.write('<div class="error">' + variavel + '<span class="errortext">Variável redeclarada</span></div>' + '[' + infoEstrutura[1] + ';\n')
             elif variavel in self.naoInicializadas:
               self.fHtml.write('<div class="error">' + variavel + '<span class="errortext">Variável não inicializada</span></div>' + '[' + infoEstrutura[1] + ';\n')

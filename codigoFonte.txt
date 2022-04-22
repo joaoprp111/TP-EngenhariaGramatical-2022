@@ -3,6 +3,7 @@ string str = "s";
 string str = "d";
 print(str);
 if (a){
+    input(c);
     if(b){
         if(c){
             print("1");
@@ -14,14 +15,5 @@ if(str){
         print("t");
         input(c);
         c = c*2;
-    }
-}
-while(a < 0){
-    repeat(20){
-        x = x + 1;
-        input(f);
-    }
-    if(x + 5 / 3 == True){
-        print(l[6]);
     }
 }
