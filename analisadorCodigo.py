@@ -308,7 +308,7 @@ def criarSegundaPagina(dicionario,ficheiro):
   if len(alternativas) > 0:
     ficheiro.write('\t<h4>Alternativa para os ifs aninhados</h4>\n')
     for a in alternativas:
-      ficheiro.write('\t<p>' + a + '</p>\n')
+      ficheiro.write('\t<p>' + str(a) + '</p>\n')
   
     
   
@@ -667,7 +667,10 @@ class LinguagemProgramacao(Interpreter):
   def relac(self,tree):
     res = ''
     for child in tree.children:
-      if isinstance(child,Token) and self.nasInstrucoes:
+      if isinstance(child,Token) and (child.value == '<' or child.value == '>' or child.value == '<=' or child.value == '>=' or child.value == '==') and self.nasInstrucoes:
+        self.fHtml.write(child.value)
+        res += str(' ' + child.value + ' ')
+      elif isinstance(child,Token) and self.nasInstrucoes:
         self.fHtml.write(child.value)
         res += str(child.value)
       elif isinstance(child,Tree) and child.data == 'exp':
