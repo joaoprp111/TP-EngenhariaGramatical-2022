@@ -309,9 +309,16 @@ def criarSegundaPagina(dicionario,ficheiro):
     ficheiro.write('\t<h4>Alternativa para os ifs aninhados</h4>\n')
     for a in alternativas:
       ficheiro.write('\t<p>' + str(a) + '</p>\n')
-  
-    
-  
+      
+def eDigito(palavra):
+  res = True
+  i = 0
+  size = len(palavra)
+  while res and i < size:
+    if palavra[i] < "0" or palavra[i] > "9":
+      res = False
+    i += 1
+  return res
 
 class LinguagemProgramacao(Interpreter):
 
@@ -399,6 +406,8 @@ class LinguagemProgramacao(Interpreter):
         self.fHtml.write(tipo + ' ')
       elif isinstance(child, Token) and child.type == 'ATRIB': #Se houver atribuição visita o valor que está a ser declarado
         valor = self.visit(tree.children[3])
+        if valor != None and eDigito(valor):
+          valor = int(valor)
         if valor == None:
           self.naoInicializadas.add(var)
           self.decls[var] = tipo
