@@ -405,7 +405,7 @@ class LinguagemProgramacao(Interpreter):
           self.fHtml.write(';\n')
         elif isinstance(valor,str) and valor[0] != '"':
           self.fHtml.write(' = ')
-          if '[' or ']' in valor: #O valor resulta de um acesso a uma estrutura
+          if ('[' or ']') in valor: #O valor resulta de um acesso a uma estrutura
             infoEstrutura = valor.split('[')
             variavel = infoEstrutura[0]
             if variavel not in self.decls.keys(): #Se a variável não tiver sido declarada antes é gerado um erro

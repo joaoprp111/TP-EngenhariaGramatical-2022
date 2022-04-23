@@ -1,19 +1,17 @@
-list l = [1,2,3];
-string str = "s";
-string str = "d";
-print(str);
-if (a){
-    input(c);
+int s=2;
+if(a){
     if(b){
         if(c){
             print("1");
         }
     }
-}
-if(str){
-    while(str > "1"){
-        print("t");
-        input(c);
-        c = c*2;
+    if(a<b){
+        if(b<c){
+            if(s==2){
+                if(True){
+                    print("False");
+                }
+            }
+        }
     }
 }
