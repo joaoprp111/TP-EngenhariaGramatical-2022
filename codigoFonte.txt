@@ -5,8 +5,8 @@ if(a){
             print("1");
         }
     }
-    if(a<b){
-        if(b<c){
+    if(a<d){
+        if(d<c){
             if(s==2){
                 if(True){
                     print("False");
