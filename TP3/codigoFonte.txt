@@ -1,0 +1,11 @@
+int s=2;
+set l;
+list l = [1,2,3,4,5];
+int x = 133;
+dict d = {"ola":1, "adeus":2};
+
+if(a){
+    print("a");
+} else {
+    print("b");
+}

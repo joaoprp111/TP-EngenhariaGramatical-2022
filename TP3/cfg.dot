@@ -1,0 +1,15 @@
+digraph cfg {
+	0 [label=inicio]
+	1 [label="int s = 2"]
+	0 -> 1
+	2 [label="set l"]
+	1 -> 2
+	3 [label="list l = [1, 2, 3, 4, 5]"]
+	2 -> 3
+	4 [label="int x = 133"]
+	3 -> 4
+	5 [label="dict d = {'ola': 1, 'adeus': 2}"]
+	4 -> 5
+	6 [label=fim]
+	5 -> 6
+}

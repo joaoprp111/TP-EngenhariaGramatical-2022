@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Análise Estática</title>
+  </head>
+  <style>
+    .info {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted black;
+      color: rgb(142, 142, 248);
+    }
+    .info .infotext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -40px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .info .infotext::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 20%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+    .info:hover .infotext {
+      visibility: visible;
+      opacity: 1;
+    }
+    .error {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted black;
+      color: red;
+    }
+    .code {
+      position: relative;
+      display: inline-block;
+    }
+    .error .errortext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -40px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .error .errortext::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 20%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+    .error:hover .errortext {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+  <body>
+    <h2>Análise de código</h2>
+    <pre>
+        <code>
+          <div class="declaracoes">
+	int s = 2;
+	set l;
+	list <div class="error">l<span class="errortext">Variável redeclarada</span></div> = <div class="error"><span class="errortext">Variável redeclarada</span></div>[1, 2, 3, 4, 5];
+	int x = 133;
+	dict d = {'ola': 1, 'adeus': 2};
+          </div>
+          <div class="instrucoes">
+	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(<div class="error">a<span class="errortext">Variável não declarada</span></div>){
+		print("a");
+	}else{
+		print("b");
+	}
+          </div>
+
+      </code>
+    </pre>
+  </body>
+</html>
