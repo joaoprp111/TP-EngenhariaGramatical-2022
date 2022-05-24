@@ -98,8 +98,13 @@
 	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(<div class="error">a<span class="errortext">Variável não declarada</span></div>){
 		print("a");
 	}else{
-		print("b");
+		<div class="info">if<span class="infotext">Nível de aninhamento: 1</span></div>(<div class="error">b<span class="errortext">Variável não declarada</span></div>><div class="error">a<span class="errortext">Variável não declarada</span></div>){
+			print("c");
+			input(<div class="error">b<span class="errortext">Variável não declarada</span></div>);
+		}
 	}
+	print("b");
+	input(<div class="error">a<span class="errortext">Variável não declarada</span></div>);
           </div>
 
       </code>

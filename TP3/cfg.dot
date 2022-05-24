@@ -10,6 +10,32 @@ digraph cfg {
 	3 -> 4
 	5 [label="dict d = {'ola': 1, 'adeus': 2}"]
 	4 -> 5
-	6 [label=fim]
+	6 [label="if a" shape=diamond]
+	7 [label=then]
+	6 -> 7
+	8 [label=fi1]
+	9 [label="print(\"a\")"]
+	7 -> 9
+	9 -> 8
+	10 [label=else]
+	6 -> 10
+	11 [label="if b > a" shape=diamond]
+	12 [label=then]
+	11 -> 12
+	13 [label=fi2]
+	14 [label="print(\"c\")"]
+	12 -> 14
+	15 [label="input(b)"]
+	14 -> 15
+	15 -> 13
+	10 -> 11
+	11 -> 13
+	13 -> 8
 	5 -> 6
+	16 [label="print(\"b\")"]
+	8 -> 16
+	17 [label="input(a)"]
+	16 -> 17
+	18 [label=fim]
+	17 -> 18
 }

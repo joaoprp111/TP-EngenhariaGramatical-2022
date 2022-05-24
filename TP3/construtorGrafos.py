@@ -269,7 +269,9 @@ class LinguagemProgramacao(Interpreter):
     return r
 
   def instrucao(self, tree):
-    instrucaoAtual = self.instrucaoAtual
+    localLastStatement = self.lastStatement
+    ifNode = ''
+    endifNode = ''
     nivelIf = self.nivelIf
     nivelProfundidade = self.nivelProfundidade
     numTabs = (nivelProfundidade * '\t') + '\t'
@@ -281,6 +283,7 @@ class LinguagemProgramacao(Interpreter):
     for child in tree.children:
         if not sairDoCiclo: 
             if isinstance(child,Token) and child.type == 'IF':
+                existeElse = False
                 self.instrucaoAtual = "condicional"
                 self.dicinstrucoes['condicionais'] += 1
                 self.dicinstrucoes['total'] += 1
@@ -297,7 +300,26 @@ class LinguagemProgramacao(Interpreter):
                 self.fHtml.write('(')
                 condicaoIfAtual = self.visit(tree.children[2])[0]
                 self.fHtml.write('){\n')
+
+                #Criação do nó para o grafo
+                ifNode = str(self.statementCount)
+                self.dot.node(ifNode,label='if ' + condicaoIfAtual, shape='diamond')
+                self.lastStatement = ifNode
+                self.statementCount += 1
+                self.nodeStatement = ''
+
                 if len(tree.children[5].children) > 0: #Se existirem instruções dentro do if
+                    #Criar o nó then
+                    self.dot.node(str(self.statementCount),label='then')
+                    self.dot.edge(ifNode,str(self.statementCount))
+                    self.lastStatement = str(self.statementCount)
+                    self.statementCount += 1
+
+                    #Criar o nó para fim do if
+                    endifNode = str(self.statementCount)
+                    self.dot.node(endifNode,label='fi' + str(self.dicinstrucoes['condicionais']))
+                    self.statementCount += 1
+
                     existeElse = 'else' in tree.children[5].children[0].children
                     proxInstrucao = str(tree.children[5].children[0].children[0])
                     if proxInstrucao != 'if' or existeElse or len(tree.children[5].children) > 1:
@@ -314,7 +336,18 @@ class LinguagemProgramacao(Interpreter):
                         corpo = res[0]
                         for r in res[1:]:
                             corpo += '\n' + r
+
+                        #Ligar ao fim do if
+                        self.dot.edge(self.lastStatement,endifNode)
+
                         if 'else' in tree.children:
+                            existeElse = True
+                            #Criar o nó else
+                            self.dot.node(str(self.statementCount),label='else')
+                            self.dot.edge(ifNode,str(self.statementCount))
+                            self.lastStatement = str(self.statementCount)
+                            self.statementCount += 1
+
                             self.fHtml.write('else{\n')
                             self.nivelProfundidade += 1
                             self.nivelIf += 1
@@ -324,6 +357,9 @@ class LinguagemProgramacao(Interpreter):
                             numTabs = (self.nivelProfundidade * '\t') + '\t'
                             self.fHtml.write(numTabs + '}')
                             resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}else{\n' + str(resElse) + '}'
+
+                            #Ligar ao fim do if
+                            self.dot.edge(self.lastStatement,endifNode)
                         else:               
                             resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}'
                     else:
@@ -373,33 +409,46 @@ class LinguagemProgramacao(Interpreter):
                 self.dicinstrucoes['leitura'] += 1
                 self.dicinstrucoes['total'] += 1
                 resultado += child.value
+                self.nodeStatement += child.value
             elif isinstance(child, Token) and child.type == 'PRINT':
                 self.fHtml.write(child.value)
-                instrucaoAtual = self.instrucaoAtual = "escrita"
+                self.instrucaoAtual = "escrita"
                 self.dicinstrucoes['escrita'] += 1
                 self.dicinstrucoes['total'] += 1
                 resultado += child.value
+                self.nodeStatement += child.value
             elif isinstance(child,Token): 
                 self.fHtml.write(child.value)
                 resultado += child.value
+                if child.value != ';':
+                  self.nodeStatement += child.value
             elif isinstance(child, Tree) and child.data == 'atribuicao':
-                instrucaoAtual = self.instrucaoAtual = "atribuicao"
+                self.instrucaoAtual = "atribuicao"
                 self.dicinstrucoes['atribuicoes'] += 1
                 self.dicinstrucoes['total'] += 1
-                resultado += str(self.visit(child))
+                res = str(self.visit(child))
+                resultado += res
+                self.nodeStatement += res
             elif isinstance(child, Tree):
                 if child.data == 'conteudoread':
-                    resultado += str(self.visit(child))
+                    res = str(self.visit(child))
+                    resultado += res
                 elif child.data == 'logic':
-                    resultado += str(self.visit(child))
+                    res = str(self.visit(child))
+                    resultado += res
+                    self.nodeStatement += res
                 elif child.data == 'condicao':
-                    resultado += str(self.visit(child))
+                    res = str(self.visit(child))
+                    resultado += res
+                    self.nodeStatement += res
                 elif child.data == 'instrucoes':
                     self.nivelProfundidade += 1
                     self.nivelIf = 0
-                    resultado += str(self.visit(child))
+                    res = str(self.visit(child))
+                    resultado += res
                     self.nivelIf = nivelIf
                     self.nivelProfundidade = nivelProfundidade
+                    self.nodeStatement += res
 
     #Se a lista de condições tiver mais do que um elemento então podemos aninhar os ifs
     if len(condicoesParaAninhar) > 1:
@@ -412,6 +461,22 @@ class LinguagemProgramacao(Interpreter):
       #print('ALTERNATIVA PARA O IF: ', alternativaIf)
       self.alternativasIfs.append(alternativaIf)
     self.fHtml.write('\n')
+
+    #Verificar se há um novo statement para adicionar ao grafo
+    #Se não existir um if...
+    if self.nodeStatement != '' and ifNode == '':
+      self.dot.node(str(self.statementCount),label=self.nodeStatement)
+      self.dot.edge(self.lastStatement,str(self.statementCount))
+      self.lastStatement = str(self.statementCount)
+      self.nodeStatement = ''
+      self.statementCount += 1
+    #Se existir um if...
+    elif self.nodeStatement == '' and ifNode != '':
+      self.dot.edge(localLastStatement,ifNode)
+      self.lastStatement = endifNode
+      self.nodeStatement = ''
+      if not existeElse:
+        self.dot.edge(ifNode,endifNode)
     return resultado
     
   def condicao(self,tree):
@@ -451,16 +516,20 @@ class LinguagemProgramacao(Interpreter):
         self.naoInicializadas.remove(child.value)
         self.utilizadas.add(child.value)
         res += child.value
+        self.nodeStatement += child.value
       elif isinstance(child,Token) and child.type == 'VAR' and child.value not in self.decls.keys():
         self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
         res += '<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>'
+        self.nodeStatement += child.value
       elif isinstance(child,Token):
         self.fHtml.write(child.value)
         res += str(child.value)
+        self.nodeStatement += str(child.value)
       elif isinstance(child,Tree) and child.data == 'chave':
         chave = str(self.visit(child))
         self.fHtml.write(chave)
         res += chave
+        self.nodeStatement += chave
     return res
 
   def tipo(self, tree):

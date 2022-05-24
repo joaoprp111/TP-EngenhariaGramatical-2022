@@ -7,5 +7,10 @@ dict d = {"ola":1, "adeus":2};
 if(a){
     print("a");
 } else {
-    print("b");
+    if(b > a){
+        print("c");
+        input(b);
+    }
 }
+print("b");
+input(a);
