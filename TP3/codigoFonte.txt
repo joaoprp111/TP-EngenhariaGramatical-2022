@@ -7,16 +7,16 @@ dict d = {"ola":1, "adeus":2};
 if(a){
     print("a");
 } else {
-    if(b > a){
-        print("c");
-        input(b);
-    }
-    for(a = 1; a < 15; a = a + 3){
-        print(d);
-        d = {"ola":2, "adeus":3};
-        input(a);
+    for(a = 0; a < 10; a = a * 2){
+        if(b){
+            x = x + 2;
+            print(x);
+        } else {
+            while(x < 10){
+                print("2");
+            }
+        }
     }
 }
 
 print("b");
-input(a);

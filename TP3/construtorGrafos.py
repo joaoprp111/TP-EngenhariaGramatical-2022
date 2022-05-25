@@ -346,6 +346,7 @@ class LinguagemProgramacao(Interpreter):
 
                         #Ligar ao fim do if
                         self.dot.edge(self.lastStatement,endifNode)
+                        self.lastStatement = endifNode
 
                         if 'else' in tree.children:
                             existeElse = True
@@ -367,6 +368,7 @@ class LinguagemProgramacao(Interpreter):
 
                             #Ligar ao fim do if
                             self.dot.edge(self.lastStatement,endifNode)
+                            self.lastStatement = endifNode
                         else:               
                             resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}'
                     else:
@@ -515,15 +517,13 @@ class LinguagemProgramacao(Interpreter):
     #Se existir um ciclo...
     if cicleNode != '':
         if isFor:
-          lastInstId = str(self.statementCount - 1)
           #Ligar a última instrução dentro do ciclo à atribuição de incrementação
-          self.dot.edge(lastInstId, incrementNode)
+          self.dot.edge(self.lastStatement, incrementNode)
           #Ligar a incrementação ao for
           self.dot.edge(incrementNode,cicleNode)
         else:
           #Ligar a última instrução dentro do ciclo ao próprio ciclo
-          lastInstId = str(self.statementCount - 1)
-          self.dot.edge(lastInstId,cicleNode)
+          self.dot.edge(self.lastStatement,cicleNode)
         #Ligar o ciclo ao fim de ciclo
         self.dot.node(str(self.statementCount),label='fimCiclo' + str(self.dicinstrucoes['ciclicas']))
         self.dot.edge(cicleNode,str(self.statementCount))
@@ -532,14 +532,14 @@ class LinguagemProgramacao(Interpreter):
         self.statementCount += 1
 
     #Se não existir um if e houver um statement para escrever...
-    elif self.nodeStatement != '' and ifNode == '':
+    if self.nodeStatement != '' and ifNode == '':
       self.dot.node(str(self.statementCount),label=self.nodeStatement)
       self.dot.edge(self.lastStatement,str(self.statementCount))
       self.lastStatement = str(self.statementCount)
       self.nodeStatement = ''
       self.statementCount += 1
     #Se existir um if...
-    elif self.nodeStatement == '' and ifNode != '':
+    elif ifNode != '':
       self.dot.edge(localLastStatement,ifNode)
       self.lastStatement = endifNode
       self.nodeStatement = ''
