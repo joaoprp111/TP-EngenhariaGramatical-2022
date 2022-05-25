@@ -13,8 +13,8 @@ digraph cfg {
 	6 [label="if a" shape=diamond]
 	7 [label=then]
 	6 -> 7
-	8 [label=fi1]
-	9 [label="print(\"a\")"]
+	8 [label=fimIf1]
+	9 [label="print \"a\""]
 	7 -> 9
 	9 -> 8
 	10 [label=else]
@@ -22,20 +22,35 @@ digraph cfg {
 	11 [label="if b > a" shape=diamond]
 	12 [label=then]
 	11 -> 12
-	13 [label=fi2]
-	14 [label="print(\"c\")"]
+	13 [label=fimIf2]
+	14 [label="print \"c\""]
 	12 -> 14
-	15 [label="input(b)"]
+	15 [label="input b"]
 	14 -> 15
 	15 -> 13
 	10 -> 11
 	11 -> 13
-	13 -> 8
-	5 -> 6
-	16 [label="print(\"b\")"]
-	8 -> 16
-	17 [label="input(a)"]
+	16 [label="a=1"]
+	13 -> 16
+	17 [label="for a < 15"]
 	16 -> 17
-	18 [label=fim]
-	17 -> 18
+	18 [label="a=a+3"]
+	19 [label="print d"]
+	17 -> 19
+	20 [label="d={'ola': 2, 'adeus': 3}"]
+	19 -> 20
+	21 [label="input a"]
+	20 -> 21
+	21 -> 18
+	18 -> 17
+	22 [label=fimCiclo1]
+	17 -> 22
+	22 -> 8
+	5 -> 6
+	23 [label="print \"b\""]
+	8 -> 23
+	24 [label="input a"]
+	23 -> 24
+	25 [label=fim]
+	24 -> 25
 }

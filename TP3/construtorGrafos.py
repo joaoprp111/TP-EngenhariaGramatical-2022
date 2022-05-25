@@ -270,6 +270,13 @@ class LinguagemProgramacao(Interpreter):
 
   def instrucao(self, tree):
     localLastStatement = self.lastStatement
+    estruturaCiclica = False
+    isFor = False
+    #Utilizado para saber quais as atribuições do for
+    contadorAtribuicoes = 0
+    incrementNode = ''
+    initialAtribForNode = ''
+    cicleNode = ''
     ifNode = ''
     endifNode = ''
     nivelIf = self.nivelIf
@@ -317,7 +324,7 @@ class LinguagemProgramacao(Interpreter):
 
                     #Criar o nó para fim do if
                     endifNode = str(self.statementCount)
-                    self.dot.node(endifNode,label='fi' + str(self.dicinstrucoes['condicionais']))
+                    self.dot.node(endifNode,label='fimIf' + str(self.dicinstrucoes['condicionais']))
                     self.statementCount += 1
 
                     existeElse = 'else' in tree.children[5].children[0].children
@@ -396,6 +403,9 @@ class LinguagemProgramacao(Interpreter):
                 self.fHtml.write(numTabs + child.value)
                 resultado += numTabs + '}'
             elif isinstance(child, Token) and (child.type == 'FOR' or child.type == 'WHILE' or child.type == 'REPEAT'):
+                estruturaCiclica = True
+                if child.type == 'FOR':
+                  isFor = True
                 if self.nivelProfundidade > 0:
                     self.totalSituacoesAn += 1
                 self.fHtml.write(child.value)
@@ -403,32 +413,53 @@ class LinguagemProgramacao(Interpreter):
                 self.dicinstrucoes['total'] += 1
                 self.instrucaoAtual = "ciclo"
                 resultado += child.value
+                if not isFor:
+                  self.nodeStatement += child.value + ' '
             elif isinstance(child, Token) and child.type == 'READ':
                 self.fHtml.write(child.value)
                 self.instrucaoAtual = "leitura"
                 self.dicinstrucoes['leitura'] += 1
                 self.dicinstrucoes['total'] += 1
                 resultado += child.value
-                self.nodeStatement += child.value
+                self.nodeStatement += child.value + ' '
             elif isinstance(child, Token) and child.type == 'PRINT':
                 self.fHtml.write(child.value)
                 self.instrucaoAtual = "escrita"
                 self.dicinstrucoes['escrita'] += 1
                 self.dicinstrucoes['total'] += 1
                 resultado += child.value
-                self.nodeStatement += child.value
+                self.nodeStatement += child.value + ' '
             elif isinstance(child,Token): 
                 self.fHtml.write(child.value)
                 resultado += child.value
-                if child.value != ';':
+                if child.value not in [';','(',')','{','}']:
                   self.nodeStatement += child.value
+                  if child.type == 'NUM' and estruturaCiclica:
+                    cicleNode = str(self.statementCount)
+                    self.dot.node(cicleNode,label=self.nodeStatement)
+                    self.dot.edge(self.lastStatement,cicleNode)
+                    self.lastStatement = str(self.statementCount)
+                    self.statementCount += 1
+                    self.nodeStatement = ''
             elif isinstance(child, Tree) and child.data == 'atribuicao':
                 self.instrucaoAtual = "atribuicao"
                 self.dicinstrucoes['atribuicoes'] += 1
                 self.dicinstrucoes['total'] += 1
                 res = str(self.visit(child))
                 resultado += res
-                self.nodeStatement += res
+                if isFor and contadorAtribuicoes == 0:
+                  #Atribuição do for
+                  self.dot.node(str(self.statementCount),label=self.nodeStatement)
+                  initialAtribForNode = str(self.statementCount)
+                  self.statementCount += 1
+                  self.nodeStatement = ''
+                elif isFor and contadorAtribuicoes == 1:
+                  #Incrementação do for
+                  self.dot.node(str(self.statementCount),label=self.nodeStatement)
+                  incrementNode = str(self.statementCount)
+                  self.statementCount += 1
+                  self.nodeStatement = ''
+                contadorAtribuicoes += 1
             elif isinstance(child, Tree):
                 if child.data == 'conteudoread':
                     res = str(self.visit(child))
@@ -440,7 +471,25 @@ class LinguagemProgramacao(Interpreter):
                 elif child.data == 'condicao':
                     res = str(self.visit(child))
                     resultado += res
-                    self.nodeStatement += res
+                    if estruturaCiclica:
+                      if isFor:
+                        #Ligar a última instrução antes do for à primeira atrib do for
+                        self.dot.edge(self.lastStatement,initialAtribForNode)
+                        #Ligar a primeir atrib ao for
+                        cicleNode = str(self.statementCount)
+                        self.nodeStatement = 'for ' + self.nodeStatement
+                        self.dot.node(cicleNode,label=self.nodeStatement)
+                        self.dot.edge(initialAtribForNode,cicleNode)
+                        self.lastStatement = str(self.statementCount)
+                        self.statementCount += 1
+                        self.nodeStatement = ''
+                      else:
+                        cicleNode = str(self.statementCount)
+                        self.dot.node(cicleNode,label=self.nodeStatement)
+                        self.dot.edge(self.lastStatement,cicleNode)
+                        self.lastStatement = str(self.statementCount)
+                        self.statementCount += 1
+                        self.nodeStatement = ''
                 elif child.data == 'instrucoes':
                     self.nivelProfundidade += 1
                     self.nivelIf = 0
@@ -448,7 +497,7 @@ class LinguagemProgramacao(Interpreter):
                     resultado += res
                     self.nivelIf = nivelIf
                     self.nivelProfundidade = nivelProfundidade
-                    self.nodeStatement += res
+                    #self.nodeStatement += res
 
     #Se a lista de condições tiver mais do que um elemento então podemos aninhar os ifs
     if len(condicoesParaAninhar) > 1:
@@ -463,8 +512,27 @@ class LinguagemProgramacao(Interpreter):
     self.fHtml.write('\n')
 
     #Verificar se há um novo statement para adicionar ao grafo
-    #Se não existir um if...
-    if self.nodeStatement != '' and ifNode == '':
+    #Se existir um ciclo...
+    if cicleNode != '':
+        if isFor:
+          lastInstId = str(self.statementCount - 1)
+          #Ligar a última instrução dentro do ciclo à atribuição de incrementação
+          self.dot.edge(lastInstId, incrementNode)
+          #Ligar a incrementação ao for
+          self.dot.edge(incrementNode,cicleNode)
+        else:
+          #Ligar a última instrução dentro do ciclo ao próprio ciclo
+          lastInstId = str(self.statementCount - 1)
+          self.dot.edge(lastInstId,cicleNode)
+        #Ligar o ciclo ao fim de ciclo
+        self.dot.node(str(self.statementCount),label='fimCiclo' + str(self.dicinstrucoes['ciclicas']))
+        self.dot.edge(cicleNode,str(self.statementCount))
+        self.lastStatement = str(self.statementCount)
+        self.nodeStatement = ''
+        self.statementCount += 1
+
+    #Se não existir um if e houver um statement para escrever...
+    elif self.nodeStatement != '' and ifNode == '':
       self.dot.node(str(self.statementCount),label=self.nodeStatement)
       self.dot.edge(self.lastStatement,str(self.statementCount))
       self.lastStatement = str(self.statementCount)
@@ -481,6 +549,7 @@ class LinguagemProgramacao(Interpreter):
     
   def condicao(self,tree):
     r = self.visit_children(tree)
+    self.nodeStatement += str(r[0])
     return r
     #print('CONDICAO: ', r)
     
@@ -491,21 +560,28 @@ class LinguagemProgramacao(Interpreter):
         self.fHtml.write(child.value)
         self.naoInicializadas.remove(child.value)
         res += child.value
+        self.nodeStatement += child.value
       elif (isinstance(child,Token) and child.type == 'VAR') and child.value not in self.decls.keys():
         self.fHtml.write('<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>')
         res += '<div class="error">' + child.value + '<span class="errortext">Variável não declarada</span></div>'
+        self.nodeStatement += child.value
       elif (isinstance(child,Token) and child.type == 'VAR'):
         self.fHtml.write(child.value)
         res += child.value
+        self.nodeStatement += child.value
       elif isinstance(child,Token):
         self.fHtml.write(child.value)
         res += str(child.value)
+        self.nodeStatement += child.value
       elif isinstance(child,Tree) and child.data == 'chave':
         chave = self.visit(child)
         self.fHtml.write(str(chave))
         res += str(chave)
+        self.nodeStatement += str(chave)
       elif isinstance(child,Tree):
-        res += str(self.visit(child))
+        r = str(self.visit(child))
+        res += r
+        self.nodeStatement += r
     return res
   
   def conteudoread(self,tree):
