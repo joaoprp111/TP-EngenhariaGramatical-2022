@@ -14,40 +14,37 @@ digraph cfg {
 	7 [label=fimIf1]
 	8 [label="print \"c\""]
 	6 -> 8
-	9 [label="y=x"]
+	9 [label="while x < 20"]
 	8 -> 9
-	10 [label="for y > 0"]
+	10 [label="if x%2 == 0" shape=diamond]
+	11 [label=then]
+	10 -> 11
+	12 [label=fimIf2]
+	13 [label="print \"par\""]
+	11 -> 13
+	13 -> 12
+	14 [label=else]
+	10 -> 14
+	15 [label="print \"impar\""]
+	14 -> 15
+	15 -> 12
 	9 -> 10
-	11 [label="y=y-1"]
-	12 [label="if l[y] == \"a\"" shape=diamond]
-	13 [label=then]
-	12 -> 13
-	14 [label=fimIf2]
-	15 [label="print \"Encontrei o a\""]
-	13 -> 15
-	16 [label="n=y+1"]
-	15 -> 16
-	17 [label="if l[n] == \"b\"" shape=diamond]
-	18 [label=then]
-	17 -> 18
-	19 [label=fimIf3]
-	20 [label="print \"Encontrei o b\""]
-	18 -> 20
-	21 [label="input l[n]"]
-	20 -> 21
-	21 -> 19
-	16 -> 17
-	17 -> 19
-	19 -> 14
-	10 -> 12
-	12 -> 14
-	14 -> 11
-	11 -> 10
-	22 [label=fimCiclo1]
-	10 -> 22
-	22 -> 7
+	16 [label="x=x+1"]
+	12 -> 16
+	16 -> 9
+	17 [label=fimCiclo1]
+	9 -> 17
+	17 -> 7
+	18 [label=else]
+	5 -> 18
+	19 [label="print \"nada\""]
+	18 -> 19
+	20 [label="x=x*50"]
+	19 -> 20
+	20 -> 7
 	4 -> 5
-	5 -> 7
-	23 [label=fim]
-	7 -> 23
+	21 [label="print x"]
+	7 -> 21
+	22 [label=fim]
+	21 -> 22
 }

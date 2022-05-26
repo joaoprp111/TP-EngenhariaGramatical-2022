@@ -96,17 +96,19 @@
 	x=2;
 	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(l[x]=="c"){
 		print("c");
-		for(<div class="error">y<span class="errortext">Variável não declarada</span></div>=x;<div class="error">y<span class="errortext">Variável não declarada</span></div>>0;<div class="error">y<span class="errortext">Variável não declarada</span></div>=<div class="error">y<span class="errortext">Variável não declarada</span></div>-1){
-			<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(l[y]=="a"){
-				print("Encontrei o a");
-				<div class="error">n<span class="errortext">Variável não declarada</span></div>=<div class="error">y<span class="errortext">Variável não declarada</span></div>+1;
-				<div class="info">if<span class="infotext">Nível de aninhamento: 1</span></div>(l[n]=="b"){
-					print("Encontrei o b");
-					input(l[n]);
-				}
+		while(x<20){
+			<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(x%2==0){
+				print("par");
+			}else{
+				print("impar");
 			}
+			x=x+1;
 		}
+	}else{
+		print("nada");
+		x=x*50;
 	}
+	print(x);
           </div>
 
       </code>

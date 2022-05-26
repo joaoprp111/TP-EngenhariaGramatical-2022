@@ -5,14 +5,17 @@ list l = ["a","b","c"];
 x = 2;
 if(l[x] == "c"){
     print("c");
-    for(y = x; y > 0; y = y - 1){
-        if(l[y] == "a"){
-            print("Encontrei o a");
-            n = y + 1;
-            if(l[n] == "b"){
-                print("Encontrei o b");
-                input(l[n]);
-            }
+    while(x < 20){
+        if(x % 2 == 0){
+            print("par");
+        } else {
+            print("impar");
         }
+        x = x + 1;
     }
+} else {
+    print("nada");
+    x = x * 50;
 }
+
+print(x);

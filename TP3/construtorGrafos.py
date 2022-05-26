@@ -6,6 +6,10 @@ from lark.visitors import Interpreter
 from lark import Discard
 from funcoesUteis import *
 import graphviz 
+import pydot
+import os
+os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz/bin/'
+
 
 grammar = '''
 linguagem: declaracoes instrucoes
@@ -127,6 +131,7 @@ class LinguagemProgramacao(Interpreter):
     self.nodeStatement = ''
     self.lastStatement = ''
     self.statementCount = 0
+    self.edgeCountCfg = 0
     self.sourceNodeSdg = ''
     self.nodeStatementSdg = ''
     self.statementCountSdg = 0
@@ -178,6 +183,8 @@ class LinguagemProgramacao(Interpreter):
     self.visit(tree.children[1]) #Instruções
     self.dot.node(str(self.statementCount), label='fim')
     self.dot.edge(self.lastStatement,str(self.statementCount))
+    self.edgeCountCfg += 1
+    self.statementCount += 1
     self.fHtml.write(' '*10 + '</div>\n')
     preencherFim(self.fHtml)
     self.fHtml.close()
@@ -194,12 +201,20 @@ class LinguagemProgramacao(Interpreter):
     self.output['totalSituacoesAn'] = self.totalSituacoesAn
     self.output['condicoesIf'] = self.condicoesIfs
     self.output['alternativasIfs'] = self.alternativasIfs
-    #Preencher a segunda página com informações adicionais
-    criarSegundaPagina(self.output, self.f2Html)
-
-    #Visualizar os grafos gerados
+    #Escrever os grafos gerados
     self.fCfg.write(self.dot.source)
     self.fSdg.write(self.dotSdg.source)
+    self.fCfg.close()
+    self.fSdg.close()
+    #Criar imagens para os mesmos
+    (cfg,) = pydot.graph_from_dot_file('cfg.dot')
+    cfg.write('cfg.png',format='png')
+    (sdg,) = pydot.graph_from_dot_file('sdg.dot')
+    sdg.write('sdg.png',format='png')
+    #Calcular a complexidade de McCabe
+    c = complexidade_McCabe(self.edgeCountCfg,self.statementCount)
+    #Preencher a segunda página com informações adicionais
+    criarSegundaPagina(self.output, self.f2Html,'cfg.png','sdg.png',c)
     return self.output
 
   def declaracoes(self, tree):
@@ -295,6 +310,7 @@ class LinguagemProgramacao(Interpreter):
     self.decls[var] = tipo
     self.dot.node(str(self.statementCount), label=self.nodeStatement)
     self.dot.edge(self.lastStatement,str(self.statementCount))
+    self.edgeCountCfg += 1
     self.lastStatement = str(self.statementCount)
     self.statementCount += 1
     self.nodeStatement = ''
@@ -366,6 +382,7 @@ class LinguagemProgramacao(Interpreter):
                     #Criar o nó then CFG
                     self.dot.node(str(self.statementCount),label='then')
                     self.dot.edge(ifNode,str(self.statementCount))
+                    self.edgeCountCfg += 1
                     self.lastStatement = str(self.statementCount)
                     self.statementCount += 1
                     #Criar o nó then SDG
@@ -398,6 +415,7 @@ class LinguagemProgramacao(Interpreter):
 
                         #Ligar ao fim do if
                         self.dot.edge(self.lastStatement,endifNode)
+                        self.edgeCountCfg += 1
                         self.lastStatement = endifNode
 
                         if 'else' in tree.children:
@@ -405,6 +423,7 @@ class LinguagemProgramacao(Interpreter):
                             #Criar o nó else CFG
                             self.dot.node(str(self.statementCount),label='else')
                             self.dot.edge(ifNode,str(self.statementCount))
+                            self.edgeCountCfg += 1
                             self.lastStatement = str(self.statementCount)
                             self.statementCount += 1
 
@@ -426,6 +445,7 @@ class LinguagemProgramacao(Interpreter):
 
                             #Ligar ao fim do if
                             self.dot.edge(self.lastStatement,endifNode)
+                            self.edgeCountCfg += 1
                             self.lastStatement = endifNode
                         else:               
                             resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}'
@@ -444,6 +464,7 @@ class LinguagemProgramacao(Interpreter):
 
                         #Ligar ao fim do if
                         self.dot.edge(self.lastStatement,endifNode)
+                        self.edgeCountCfg += 1
                         self.lastStatement = endifNode
 
                         if 'else' in tree.children:
@@ -459,6 +480,7 @@ class LinguagemProgramacao(Interpreter):
 
                             #Ligar ao fim do if
                             self.dot.edge(self.lastStatement,endifNode)
+                            self.edgeCountCfg += 1
                             self.lastStatement = endifNode
                         else:               
                             resultado += child.value + '(' + condicaoIfAtual + '){\n' + str(res) + '}'
@@ -512,6 +534,7 @@ class LinguagemProgramacao(Interpreter):
                     cicleNode = str(self.statementCount)
                     self.dot.node(cicleNode,label=self.nodeStatement)
                     self.dot.edge(self.lastStatement,cicleNode)
+                    self.edgeCountCfg += 1
                     self.lastStatement = str(self.statementCount)
                     self.statementCount += 1
                     self.nodeStatement = ''
@@ -565,6 +588,7 @@ class LinguagemProgramacao(Interpreter):
                       if isFor:
                         #Ligar a última instrução antes do for à primeira atrib do for
                         self.dot.edge(self.lastStatement,initialAtribForNode)
+                        self.edgeCountCfg += 1
                         self.dotSdg.edge(self.sourceNodeSdg,initialAtribForNodeSdg)
                         #Ligar a primeira atrib ou nó origem ao for
                         cicleNode = str(self.statementCount)
@@ -574,6 +598,7 @@ class LinguagemProgramacao(Interpreter):
                         self.dot.node(cicleNode,label=self.nodeStatement)
                         self.dotSdg.node(cicleNodeSdg,label=self.nodeStatementSdg)
                         self.dot.edge(initialAtribForNode,cicleNode)
+                        self.edgeCountCfg += 1
                         self.dotSdg.edge(self.sourceNodeSdg,cicleNodeSdg) #Ligar o nó origem ao for
                         self.lastStatement = str(self.statementCount)
                         self.sourceNodeSdg = str(self.statementCountSdg)
@@ -587,6 +612,7 @@ class LinguagemProgramacao(Interpreter):
                         self.dot.node(cicleNode,label=self.nodeStatement)
                         self.dotSdg.node(cicleNodeSdg,label=self.nodeStatementSdg)
                         self.dot.edge(self.lastStatement,cicleNode)
+                        self.edgeCountCfg += 1
                         self.dotSdg.edge(self.sourceNodeSdg,cicleNodeSdg)
                         self.lastStatement = str(self.statementCount)
                         self.sourceNodeSdg = str(self.statementCountSdg)
@@ -622,14 +648,18 @@ class LinguagemProgramacao(Interpreter):
         if isFor:
           #Ligar a última instrução dentro do ciclo à atribuição de incrementação
           self.dot.edge(self.lastStatement, incrementNode)
+          self.edgeCountCfg += 1
           #Ligar a incrementação ao for
           self.dot.edge(incrementNode,cicleNode)
+          self.edgeCountCfg += 1
         else:
           #Ligar a última instrução dentro do ciclo ao próprio ciclo
           self.dot.edge(self.lastStatement,cicleNode)
+          self.edgeCountCfg += 1
         #Ligar o ciclo ao fim de ciclo
         self.dot.node(str(self.statementCount),label='fimCiclo' + str(self.dicinstrucoes['ciclicas']))
         self.dot.edge(cicleNode,str(self.statementCount))
+        self.edgeCountCfg += 1
         self.lastStatement = str(self.statementCount)
         self.nodeStatement = ''
         self.statementCount += 1
@@ -638,16 +668,19 @@ class LinguagemProgramacao(Interpreter):
     if self.nodeStatement != '' and ifNode == '': #CFG
       self.dot.node(str(self.statementCount),label=self.nodeStatement)
       self.dot.edge(self.lastStatement,str(self.statementCount))
+      self.edgeCountCfg += 1
       self.lastStatement = str(self.statementCount)
       self.nodeStatement = ''
       self.statementCount += 1
     #Se existir um if...
     elif ifNode != '': #CFG
       self.dot.edge(localLastStatement,ifNode)
+      self.edgeCountCfg += 1
       self.lastStatement = endifNode
       self.nodeStatement = ''
       if not existeElse:
         self.dot.edge(ifNode,endifNode)
+        self.edgeCountCfg += 1
 
     #Se existir um ciclo...
     if cicleNodeSdg != '': #SDG
@@ -667,8 +700,6 @@ class LinguagemProgramacao(Interpreter):
     elif ifNodeSdg != '': #SDG
       self.dotSdg.edge(localSourceNode,ifNodeSdg)
       self.nodeStatementSdg = ''
-      '''if not existeElse:
-        self.dot.edge(ifNode,endifNode)'''
     return resultado
     
   def condicao(self,tree):

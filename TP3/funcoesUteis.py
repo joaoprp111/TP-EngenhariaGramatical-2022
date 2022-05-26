@@ -107,7 +107,7 @@ def preencherFim(ficheiro):
 </html>'''
   ficheiro.write(conteudo)
   
-def criarSegundaPagina(dicionario,ficheiro):
+def criarSegundaPagina(dicionario,ficheiro,cfg,sdg,complexidade):
   inicio = '''
   <!DOCTYPE html>
   <html lang="pt">
@@ -191,6 +191,15 @@ def criarSegundaPagina(dicionario,ficheiro):
     ficheiro.write('\t<h4>Alternativa para os ifs aninhados</h4>\n')
     for a in alternativas:
       ficheiro.write('\t<p>' + str(a) + '</p>\n')
+
+  ficheiro.write('\t<h2>Grafos gerados durante a análise estática</h2>\n')
+  ficheiro.write('\t<h4>Control Flow Graph</h4>\n')
+  ficheiro.write('\t<img src="' + cfg + '" alt="Control Flow Graph">\n')
+  ficheiro.write('\t<h4>System Dependency Graph (lite)</h4>\n')
+  ficheiro.write('\t<img src="' + sdg + '" alt="System Dependency Graph">\n')
+
+  ficheiro.write('\t<h4>Complexidade de McCabe do grafo CFG</h4>\n')
+  ficheiro.write('\t<p> E(Nº arestas) - V(Nº nós) + 2 = ' + str(complexidade) + '</p>\n')
       
 def eDigito(palavra):
   res = True
@@ -214,3 +223,6 @@ def eDouble(palavra):
       res = False
     i += 1
   return res and ponto
+
+def complexidade_McCabe(arestas,nos):
+  return arestas - nos + 2

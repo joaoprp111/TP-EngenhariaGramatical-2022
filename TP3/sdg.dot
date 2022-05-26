@@ -9,27 +9,27 @@ digraph sdg {
 	3 -> 4
 	5 [label="print \"c\""]
 	4 -> 5
-	6 [label="y=x"]
+	6 [label="while x < 20"]
 	4 -> 6
-	7 [label="for y > 0"]
-	4 -> 7
-	8 [label="if l[y] == \"a\"" shape=diamond]
-	9 [label=then]
-	8 -> 9
-	10 [label="print \"Encontrei o a\""]
-	9 -> 10
-	11 [label="n=y+1"]
-	9 -> 11
-	12 [label="if l[n] == \"b\"" shape=diamond]
-	13 [label=then]
-	12 -> 13
-	14 [label="print \"Encontrei o b\""]
-	13 -> 14
-	15 [label="input l[n]"]
-	13 -> 15
-	9 -> 12
+	7 [label="if x%2 == 0" shape=diamond]
+	8 [label=then]
 	7 -> 8
-	16 [label="y=y-1"]
-	7 -> 16
+	9 [label="print \"par\""]
+	8 -> 9
+	10 [label=else]
+	7 -> 10
+	11 [label="print \"impar\""]
+	10 -> 11
+	6 -> 7
+	12 [label="x=x+1"]
+	6 -> 12
+	13 [label=else]
+	3 -> 13
+	14 [label="print \"nada\""]
+	13 -> 14
+	15 [label="x=x*50"]
+	13 -> 15
 	0 -> 3
+	16 [label="print x"]
+	0 -> 16
 }
