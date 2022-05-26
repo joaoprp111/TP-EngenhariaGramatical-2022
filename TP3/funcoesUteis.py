@@ -201,3 +201,16 @@ def eDigito(palavra):
       res = False
     i += 1
   return res
+
+def eDouble(palavra):
+  res = True
+  ponto = False
+  i = 0
+  size = len(palavra)
+  while res and i < size:
+    if palavra[i] == ".":
+      ponto = True
+    elif palavra[i] < "0" or palavra[i] > "9":
+      res = False
+    i += 1
+  return res and ponto

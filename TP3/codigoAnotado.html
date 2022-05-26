@@ -88,28 +88,25 @@
     <pre>
         <code>
           <div class="declaracoes">
-	int s = 2;
-	set l;
-	list <div class="error">l<span class="errortext">Variável redeclarada</span></div> = <div class="error"><span class="errortext">Variável redeclarada</span></div>[1, 2, 3, 4, 5];
-	int x = 133;
-	dict d = {'ola': 1, 'adeus': 2};
+	int x;
+	string s;
+	list l = <div class="error"><span class="errortext">Variável redeclarada</span></div>['"a"', '"b"', '"c"'];
           </div>
           <div class="instrucoes">
-	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(<div class="error">a<span class="errortext">Variável não declarada</span></div>){
-		print("a");
-	}else{
-		for(<div class="error">a<span class="errortext">Variável não declarada</span></div>=0;<div class="error">a<span class="errortext">Variável não declarada</span></div><10;<div class="error">a<span class="errortext">Variável não declarada</span></div>=<div class="error">a<span class="errortext">Variável não declarada</span></div>*2){
-			<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(<div class="error">b<span class="errortext">Variável não declarada</span></div>){
-				x=x+2;
-				print(x);
-			}else{
-				while(x<10){
-					print("2");
+	x=2;
+	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(l[x]=="c"){
+		print("c");
+		for(<div class="error">y<span class="errortext">Variável não declarada</span></div>=x;<div class="error">y<span class="errortext">Variável não declarada</span></div>>0;<div class="error">y<span class="errortext">Variável não declarada</span></div>=<div class="error">y<span class="errortext">Variável não declarada</span></div>-1){
+			<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(l[y]=="a"){
+				print("Encontrei o a");
+				<div class="error">n<span class="errortext">Variável não declarada</span></div>=<div class="error">y<span class="errortext">Variável não declarada</span></div>+1;
+				<div class="info">if<span class="infotext">Nível de aninhamento: 1</span></div>(l[n]=="b"){
+					print("Encontrei o b");
+					input(l[n]);
 				}
 			}
 		}
 	}
-	print("b");
           </div>
 
       </code>

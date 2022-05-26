@@ -1,22 +1,18 @@
-int s=2;
-set l;
-list l = [1,2,3,4,5];
-int x = 133;
-dict d = {"ola":1, "adeus":2};
+int x;
+string s;
+list l = ["a","b","c"];
 
-if(a){
-    print("a");
-} else {
-    for(a = 0; a < 10; a = a * 2){
-        if(b){
-            x = x + 2;
-            print(x);
-        } else {
-            while(x < 10){
-                print("2");
+x = 2;
+if(l[x] == "c"){
+    print("c");
+    for(y = x; y > 0; y = y - 1){
+        if(l[y] == "a"){
+            print("Encontrei o a");
+            n = y + 1;
+            if(l[n] == "b"){
+                print("Encontrei o b");
+                input(l[n]);
             }
         }
     }
 }
-
-print("b");

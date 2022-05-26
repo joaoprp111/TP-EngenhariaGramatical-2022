@@ -1,0 +1,35 @@
+digraph sdg {
+	0 [label="Entry MAIN" shape=trapezium]
+	1 [label="list l = ['\"a\"', '\"b\"', '\"c\"']"]
+	0 -> 1
+	2 [label="x=2"]
+	0 -> 2
+	3 [label="if l[x] == \"c\"" shape=diamond]
+	4 [label=then]
+	3 -> 4
+	5 [label="print \"c\""]
+	4 -> 5
+	6 [label="y=x"]
+	4 -> 6
+	7 [label="for y > 0"]
+	4 -> 7
+	8 [label="if l[y] == \"a\"" shape=diamond]
+	9 [label=then]
+	8 -> 9
+	10 [label="print \"Encontrei o a\""]
+	9 -> 10
+	11 [label="n=y+1"]
+	9 -> 11
+	12 [label="if l[n] == \"b\"" shape=diamond]
+	13 [label=then]
+	12 -> 13
+	14 [label="print \"Encontrei o b\""]
+	13 -> 14
+	15 [label="input l[n]"]
+	13 -> 15
+	9 -> 12
+	7 -> 8
+	16 [label="y=y-1"]
+	7 -> 16
+	0 -> 3
+}
