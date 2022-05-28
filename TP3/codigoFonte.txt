@@ -1,21 +1,11 @@
-int x;
-string s;
-list l = ["a","b","c"];
+int y = 10;
+string s = "";
 
-x = 2;
-if(l[x] == "c"){
-    print("c");
-    while(x < 20){
-        if(x % 2 == 0){
-            print("par");
-        } else {
-            print("impar");
-        }
-        x = x + 1;
+if(y % 2 == 0){
+    print(y);
+    if(s != "string"){
+        print(s);
+    } else {
+        input(s);
     }
-} else {
-    print("nada");
-    x = x * 50;
 }
-
-print(x);

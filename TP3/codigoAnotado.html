@@ -88,27 +88,18 @@
     <pre>
         <code>
           <div class="declaracoes">
-	int x;
-	string s;
-	list l = <div class="error"><span class="errortext">Variável redeclarada</span></div>['"a"', '"b"', '"c"'];
+	int y = 10;
+	string s = "";
           </div>
           <div class="instrucoes">
-	x=2;
-	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(l[x]=="c"){
-		print("c");
-		while(x<20){
-			<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(x%2==0){
-				print("par");
-			}else{
-				print("impar");
-			}
-			x=x+1;
+	<div class="info">if<span class="infotext">Nível de aninhamento: 0</span></div>(y%2==0){
+		print(y);
+		<div class="info">if<span class="infotext">Nível de aninhamento: 1</span></div>(s!="string"){
+			print(s);
+		}else{
+			input(s);
 		}
-	}else{
-		print("nada");
-		x=x*50;
 	}
-	print(x);
           </div>
 
       </code>

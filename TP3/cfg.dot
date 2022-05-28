@@ -1,50 +1,31 @@
 digraph cfg {
 	0 [label=inicio]
-	1 [label="int x"]
+	1 [label="int y = 10"]
 	0 -> 1
-	2 [label="string s"]
+	2 [label="string s = \"\""]
 	1 -> 2
-	3 [label="list l = ['\"a\"', '\"b\"', '\"c\"']"]
-	2 -> 3
-	4 [label="x=2"]
+	3 [label="if y%2 == 0" shape=diamond]
+	4 [label=then]
 	3 -> 4
-	5 [label="if l[x] == \"c\"" shape=diamond]
-	6 [label=then]
-	5 -> 6
-	7 [label=fimIf1]
-	8 [label="print \"c\""]
-	6 -> 8
-	9 [label="while x < 20"]
-	8 -> 9
-	10 [label="if x%2 == 0" shape=diamond]
-	11 [label=then]
-	10 -> 11
-	12 [label=fimIf2]
-	13 [label="print \"par\""]
-	11 -> 13
-	13 -> 12
-	14 [label=else]
-	10 -> 14
-	15 [label="print \"impar\""]
-	14 -> 15
-	15 -> 12
-	9 -> 10
-	16 [label="x=x+1"]
-	12 -> 16
-	16 -> 9
-	17 [label=fimCiclo1]
-	9 -> 17
-	17 -> 7
-	18 [label=else]
-	5 -> 18
-	19 [label="print \"nada\""]
-	18 -> 19
-	20 [label="x=x*50"]
-	19 -> 20
-	20 -> 7
-	4 -> 5
-	21 [label="print x"]
-	7 -> 21
-	22 [label=fim]
-	21 -> 22
+	5 [label=fimIf1]
+	6 [label="print y"]
+	4 -> 6
+	7 [label="if s!=\"string\"" shape=diamond]
+	8 [label=then]
+	7 -> 8
+	9 [label=fimIf2]
+	10 [label="print s"]
+	8 -> 10
+	10 -> 9
+	11 [label=else]
+	7 -> 11
+	12 [label="input s"]
+	11 -> 12
+	12 -> 9
+	6 -> 7
+	9 -> 5
+	2 -> 3
+	3 -> 5
+	13 [label=fim]
+	5 -> 13
 }

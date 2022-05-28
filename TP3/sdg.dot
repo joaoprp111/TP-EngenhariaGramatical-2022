@@ -1,35 +1,23 @@
 digraph sdg {
 	0 [label="Entry MAIN" shape=trapezium]
-	1 [label="list l = ['\"a\"', '\"b\"', '\"c\"']"]
+	1 [label="int y = 10"]
 	0 -> 1
-	2 [label="x=2"]
+	2 [label="string s = \"\""]
 	0 -> 2
-	3 [label="if l[x] == \"c\"" shape=diamond]
+	3 [label="if y%2 == 0" shape=diamond]
 	4 [label=then]
 	3 -> 4
-	5 [label="print \"c\""]
+	5 [label="print y"]
 	4 -> 5
-	6 [label="while x < 20"]
-	4 -> 6
-	7 [label="if x%2 == 0" shape=diamond]
-	8 [label=then]
-	7 -> 8
-	9 [label="print \"par\""]
-	8 -> 9
-	10 [label=else]
-	7 -> 10
-	11 [label="print \"impar\""]
-	10 -> 11
+	6 [label="if s!=\"string\"" shape=diamond]
+	7 [label=then]
 	6 -> 7
-	12 [label="x=x+1"]
-	6 -> 12
-	13 [label=else]
-	3 -> 13
-	14 [label="print \"nada\""]
-	13 -> 14
-	15 [label="x=x*50"]
-	13 -> 15
+	8 [label="print s"]
+	7 -> 8
+	9 [label=else]
+	6 -> 9
+	10 [label="input s"]
+	9 -> 10
+	4 -> 6
 	0 -> 3
-	16 [label="print x"]
-	0 -> 16
 }

@@ -322,6 +322,8 @@ class LinguagemProgramacao(Interpreter):
   def instrucao(self, tree):
     localLastStatement = self.lastStatement
     localSourceNode = self.sourceNodeSdg
+    idFimCiclo = ''
+    idFimCondicional = ''
     estruturaCiclica = False
     isFor = False
     #Utilizado para saber quais as atribuições do for
@@ -349,6 +351,7 @@ class LinguagemProgramacao(Interpreter):
                 existeElse = False
                 self.instrucaoAtual = "condicional"
                 self.dicinstrucoes['condicionais'] += 1
+                idFimCondicional = str(self.dicinstrucoes['condicionais'])
                 self.dicinstrucoes['total'] += 1
                 
                 if self.nivelIf == -1: #Primeiro if do código
@@ -393,7 +396,7 @@ class LinguagemProgramacao(Interpreter):
 
                     #Criar o nó para fim do if
                     endifNode = str(self.statementCount)
-                    self.dot.node(endifNode,label='fimIf' + str(self.dicinstrucoes['condicionais']))
+                    self.dot.node(endifNode,label='fimIf' + idFimCondicional)
                     self.statementCount += 1
 
                     existeElse = 'else' in tree.children[5].children[0].children
@@ -502,6 +505,7 @@ class LinguagemProgramacao(Interpreter):
                   self.totalSituacoesAn += 1
                 self.fHtml.write(child.value)
                 self.dicinstrucoes['ciclicas'] += 1
+                idFimCiclo = str(self.dicinstrucoes['ciclicas'])
                 self.dicinstrucoes['total'] += 1
                 self.instrucaoAtual = "ciclo"
                 resultado += child.value
@@ -657,7 +661,7 @@ class LinguagemProgramacao(Interpreter):
           self.dot.edge(self.lastStatement,cicleNode)
           self.edgeCountCfg += 1
         #Ligar o ciclo ao fim de ciclo
-        self.dot.node(str(self.statementCount),label='fimCiclo' + str(self.dicinstrucoes['ciclicas']))
+        self.dot.node(str(self.statementCount),label='fimCiclo' + idFimCiclo)
         self.dot.edge(cicleNode,str(self.statementCount))
         self.edgeCountCfg += 1
         self.lastStatement = str(self.statementCount)
